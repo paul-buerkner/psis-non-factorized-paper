@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-cv_temporal_spatial_models_cache/
-cv_temporal_spatial_models_files/
+psis_non_factorizable_models_cache/
+psis_non_factorizable_models_files/

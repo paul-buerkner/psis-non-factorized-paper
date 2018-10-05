@@ -1,6 +1,6 @@
 ---
-title: "Extending cross-validation for temporal and spatial models"
-shorttitle: "Cross-validation for temporal and spatial models"
+title: "Leave-one-out cross-validation for non-factorizable models"
+shorttitle: "Cross-validation for non-factorizable models"
 author: 
   - name: Paul-Christian Bürkner
     affiliation: "1"
@@ -31,7 +31,7 @@ figsintext: true
 floatsintext: true
 numbersections: true
 bibliography: 
-  - psis_temporal_spatial_models.bib
+  - psis_non_factorizable_models.bib
 header-includes:
    - \usepackage{mathtools}
    - \usepackage[utf8]{inputenc}
@@ -74,8 +74,8 @@ options(mc.cores = max(1, parallel::detectCores() - 1))
 # enables / disables caching for all chunks of code
 knitr::opts_chunk$set(
   cache = TRUE,
-  warning=FALSE, 
-  message=FALSE  
+  warning = FALSE, 
+  message = FALSE  
 )
 options(knitr.kable.NA = '')
 
@@ -115,8 +115,6 @@ where $w_i^{(s)}$ are importance weights. First we compute the raw importance ra
 
 and then stabilize them using Pareto smoothed importance sampling (PSIS) to obtain the weights $w_i^{(s)}$ [@vehtari2017a; @vehtari2017b]. The resulting approximation is
 referred to as PSIS-LOO [@vehtari2017a].
-
-# M-step ahead predictions for time-series models
 
 # Leave-one-out cross validation for non-factorizable models
 
@@ -243,9 +241,9 @@ $p(\theta\,|\,y_{\mathrm{mis}(i)})$.
 
 # Case Studies
 
-To illustrate the above described methods, we use two case studies. In the first case study, we will explain how to perform m-step ahead predictions for an autoregressive model applied to annual measurements of the level of Lake Huron 1875–1972 [@brockwell2016]. In the second case study, we will explain how to perform leave-one-out cross-validation for a lagged simultaneously autoregressive model applied to data of Neighborhood Crime in Columbus, Ohio [.
-
-## M-step ahead predictions for autoregressive models
+Below, we will explain how to perform leave-one-out cross-validation for a
+lagged simultaneously autoregressive model applied to data of Neighborhood Crime
+in Columbus, Ohio [cite].
 
 ## LOO-CV for lagged SAR models
 
@@ -546,13 +544,11 @@ exact LOO-CV ($\text{elpd}_{\text{approx},-4} =$ `r sum(psis_loo$pointwise[-4, "
 
 # Discussion
 
-<!--
 In summary, we have shown how to set up and validate approximate and exact
 LOO-CV for non-factorizable multivariate normal models using Stan with the
 **brms** and **loo** packages. Although we focused on the particular example of
 a spatial SAR model, the presented recipe applies more generally to models that
 can be expressed in terms of a multivariate normal likelihood.
--->
 
 <br />
 
