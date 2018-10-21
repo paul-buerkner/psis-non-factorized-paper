@@ -23,9 +23,10 @@
 }{}
 \usepackage{hyperref}
 \hypersetup{unicode=true,
-            pdftitle={Leave-one-out cross-validation for non-factorizable models},
+            pdftitle={Leave-one-out cross-validation for non-factorizable normal models},
             pdfauthor={Paul-Christian Bürkner, Jonah Gabry, \& Aki Vehtari},
-            pdfkeywords={cross-validation, pareto-smoothed importance-sampling},
+            pdfkeywords={cross-validation, pareto-smoothed importance-sampling, non-factorizable
+models, SAR models},
             pdfborder={0 0 0},
             breaklinks=true}
 \urlstyle{same}  % don't use monospace font for urls
@@ -109,7 +110,7 @@
 \def\footnote{\protect\rmarkdownfootnote}
 
 
-  \title{Leave-one-out cross-validation for non-factorizable models}
+  \title{Leave-one-out cross-validation for non-factorizable normal models}
     \author{Paul-Christian Bürkner\textsuperscript{1}, Jonah
 Gabry\textsuperscript{2}, \& Aki Vehtari\textsuperscript{3}}
     \date{}
@@ -117,8 +118,8 @@ Gabry\textsuperscript{2}, \& Aki Vehtari\textsuperscript{3}}
 \shorttitle{Cross-validation for non-factorizable models}
 \affiliation{
 \vspace{0.5cm}
-\textsuperscript{1} Department of Psychology, University of Münster, Germany\\\textsuperscript{2} Institute for Social and Economic Research in Policy, Columbia University, USA\\\textsuperscript{3} Department of Computer Science, Aalto University, Finnland}
-\keywords{cross-validation, pareto-smoothed importance-sampling}
+\textsuperscript{1} Department of Psychology, University of Münster, Germany\\\textsuperscript{2} Institute for Social and Economic Research in Policy, Columbia University, USA\\\textsuperscript{3} Department of Computer Science, Aalto University, Finland}
+\keywords{cross-validation, pareto-smoothed importance-sampling, non-factorizable models, SAR models}
 \usepackage{csquotes}
 \usepackage{upgreek}
 \captionsetup{font=singlespacing,justification=justified}
@@ -161,13 +162,25 @@ Gabry\textsuperscript{2}, \& Aki Vehtari\textsuperscript{3}}
 
 \authornote{
 
-Correspondence concerning this article should be addressed to
-Paul-Christian Bürkner, Department of Psychology, University of Münster,
-Fliednerstrasse 21, 48149 Münster, Germany. E-mail:
-\href{mailto:paul.buerkner@gmail.com}{\nolinkurl{paul.buerkner@gmail.com}}}
+Correspondence concerning this article should be addressed to Aki
+Vehtari, Department of Computer Science, Aalto University, Finland.
+E-mail:
+\href{mailto:Aki.Vehtari@aalto.fi}{\nolinkurl{Aki.Vehtari@aalto.fi}}}
 
 \abstract{
-TODO
+Cross-validation can be used to measure a models predictive accuracy for
+instance for the purpose of model comparison or selection. As exact
+cross-validation is often practically infeasible for Bayesian models
+because it requires too much time, approximate cross-validation methods
+have been developed; most notably methods for leave-one-out
+cross-validation (LOO-CV). However, standard LOO-CV requires the
+likelihood to be factorizable, that is the observations have to be
+conditionally independent given the model parameters. Unfortunately,
+some important statistical models most notably in the context of
+temporal and spatial statistics are non-factorizable, but LOO-CV may
+still be an important measure for these models. For this reason, we
+derive how to compute and validate exact and approximate LOO-CV for
+non-factorizable models that follow a multivariate normal likelhood.
 
 
 }
@@ -192,54 +205,96 @@ TODO
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
+After fitting a statistical model, we often want to measure its
+predictive accuracy, for instance for the purpose of model comparison or
+selection (Ando \& Tsay, 2010; Geisser \& Eddy, 1979; Vehtari \&
+Lampinen, 2002; Vehtari, Ojanen, \& others, 2012). In the absence of
+actual new data to predict, one general approach to evaluating a model's
+predictive accuracy is cross-validation (Vehtari \& Lampinen, 2002).
+When doing cross-validation, the data is split into two subsets. Based
+on the first subset we fit the statistical model and then evaluate its
+predictive accuarcy for the second subset. We may do this once or many
+times each time leaving out another subset.
+
+One widely applied type of cross-validation is \emph{leave-one-out
+cross-validation} (LOO-CV), where each time a single observation is left
+out and then predicted based on the model fit to the remaining data
+(Vehtari et al., 2017b). Predictive accuarcy is evaluated by first
+computing the expected log predictive density of the left-out
+observation and then taking the sum of these values over all
+observations to obtain the expected log predictive density as a single
+measure of predictive accuracy. Unfortunately, exact LOO-CV is costly as
+it requires to fit the model as many times are there are observations in
+the data. Depending on the size of the data, complexity of the model,
+and estimation method, this can be practically infeasible as it simply
+requires too much time (Vehtari et al., 2017b). For this reason,
+approximate versions of LOO-CV have been developed, most notably
+approximations via Pareto-smoothed importance-sampling (PSIS-LOO-CV;
+Vehtari et al., 2017b, 2017a), which is applicable to Bayesian models.
+
+A standard assumption of any such LOO-CV approach is that the joint
+likelihood of the model over all observations has to be factorizable,
+that is the observations have to be pairwise conditionally independent
+given the model parameters. The purpose of the present paper is to
+generalize PSIS-LOO-CV to non-factorized or non-factorizable models
+where observations are dependent even after conditioning on the model
+parameters.
+
 \hypertarget{approximate-loo-cv-using-integrated-importance-sampling}{%
 \subsection{Approximate LOO-CV using integrated
 importance-sampling}\label{approximate-loo-cv-using-integrated-importance-sampling}}
 
-To obtain the leave-one-out predictive density \(p(y_i \,|\, y_{-i})\)
-we need to integrate over \(\theta\),
+We start by introducing the mathematical basis of approximative LOO-CV.
+We index observations by \(i\) and denote the corresponding response
+value by \(y_i\). Further, we use \(y\) to indicate the response vector
+of all observations and \(y_{-i}\) to indicate the response vector
+without the \(i\)th value. Model parameters are referred to as
+\(\theta\). Throughout, a Bayesian model specification and estimation
+via Markov-Chain Monte-Carlo (MCMC) methods is assumed. To obtain the
+leave-one-out predictive density \(p(y_i \,|\, y_{-i})\) we need to
+integrate over \(\theta\):
 
 \begin{equation}
 p(y_i\,|\,y_{-i}) =
-  \int p(y_i\,|\,y_{-i}, \theta) \, p(\theta\,|\,y_{-i}) \,d\theta.
+  \int p(y_i\,|\, y_{-i}, \theta) \, p(\theta\,|\, y_{-i}) \,d \theta.
 \end{equation}
 
-Here, \(p(\theta\,|\,y_{-i})\) is the leave-one-out posterior
+Here, \(p(\theta\,|\, y_{-i})\) is the leave-one-out posterior
 distribution for \(\theta\), that is, the posterior distribution for
 \(\theta\) obtained by fitting the model while holding out the \(i\)th
 observation.
 
 To avoid the cost of sampling from \(N\) leave-one-out posteriors, it is
-possible to take the posterior draws \(\theta^{(s)}, \, s=1,\ldots,S\),
-from the \emph{full} posterior \(p(\theta\,|\,y)\), and then approximate
-the above integral using integrated importance sampling (Vehtari et al.
-(2016b), Section 3.6.1):
+possible to take the posterior draws \(\theta^{(s)}\)
+\((s=1,\ldots,S)\), from the \emph{full} posterior \(p(\theta\,|\, y)\),
+and then approximate the above integral using integrated importance
+sampling (see Section 3.6.1 in Vehtari, Mononen, Tolvanen, Sivula, \&
+Winther, 2016):
 
 \begin{equation}
- p(y_i\,|\,y_{-i}) \approx
-   \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}},
+ p(y_i\,|\, y_{-i}) \approx
+   \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}}
 \end{equation}
 
-where \(w_i^{(s)}\) are importance weights. First we compute the raw
-importance ratios
+In the above euquation, \(w_i^{(s)}\) are importance weights to be
+computed as follows. First we compute the raw importance ratios
 
 \begin{equation}
-  r_i^{(s)} \propto \frac{1}{p(y_i \,|\, y_{-i}, \,\theta^{(s)})},
+  r_i^{(s)} \propto \frac{1}{p(y_i \,|\, y_{-i}, \, \theta^{(s)})},
 \end{equation}
 
-and then stabilize them using Pareto smoothed importance sampling (PSIS)
-to obtain the weights \(w_i^{(s)}\) (Vehtari et al., 2017b, 2017a). The
-resulting approximation is referred to as PSIS-LOO (Vehtari et al.,
+and then stabilize them using Pareto smoothed importance sampling to
+obtain the weights \(w_i^{(s)}\) (Vehtari et al., 2017b, 2017a). The
+resulting approximation is referred to as PSIS-LOO-CV (Vehtari et al.,
 2017b).
 
-\hypertarget{leave-one-out-cross-validation-for-non-factorizable-models}{%
+\hypertarget{nf-loo-cv}{%
 \section{Leave-one-out cross validation for non-factorizable
-models}\label{leave-one-out-cross-validation-for-non-factorizable-models}}
+models}\label{nf-loo-cv}}
 
-When computing approximate leave-one-out cross-validation (LOO-CV) after
-fitting a Bayesian model, the first step is to calculate the
-\emph{pointwise} log-likelihood for every response value
-\(y_i, \: i = 1, \ldots, N\). This is straightforward for
+When computing approximate LOO-CV after fitting a Bayesian model, the
+first step is to calculate the \emph{pointwise} log-likelihood for every
+response value \(y_i, \: i = 1, \ldots, N\). This is straightforward for
 \emph{factorizable} models in which response values are conditionally
 independent given the model parameters \(\theta\) and the likelihood can
 be written in the familiar form
@@ -260,8 +315,8 @@ The situation is more complicated for \emph{non-factorizable} models in
 which response values are not conditionally independent. When there is
 residual dependency even after accounting for the model parameters
 \(\theta\), the conditional pointwise log-likelihood has the general
-form \(\log p(y_i \,|\, y_{-i}, \theta)\), where \(y_{-i}\) denotes all
-response values except observation \(i\).
+form \(\log p(y_i \,|\, y_{-i}, \theta)\), where, again, \(y_{-i}\)
+denotes all response values except observation \(i\).
 
 \hypertarget{loo-cv-for-multivariate-normal-models}{%
 \subsection{LOO-CV for multivariate normal
@@ -286,6 +341,7 @@ an arbitrary invertible covariance matrix \(C\). For such models, the
 LOO predictive mean and standard deviation can be computed as follows:
 
 \begin{align}
+\label{ypredpars}
   \mu_{\tilde{y},-i} &= y_i-\bar{c}_{ii}^{-1} g_i \nonumber \\
   \sigma_{\tilde{y},-i} &= \sqrt{\bar{c}_{ii}^{-1}},
 \end{align}
@@ -311,7 +367,7 @@ the log predictive density becomes:
   - \frac{1}{2}\frac{g_i^2}{\bar{c}_{ii}}
 \end{equation}
 
-(note that Vehtari et al. (2016b) has a typo in the corresponding
+(note that Vehtari et al. (2016) has a typo in the corresponding
 Equation 34). From these equations we can now derive a recipe for
 obtaining the conditional pointwise log-likelihood for \emph{all} models
 that can be expressed conditionally in terms of a multivariate normal
@@ -380,16 +436,8 @@ as
 where \(\theta_{-i}^{(s)}\) are draws from the posterior distribution
 \(p(\theta\,|\,y_{\mathrm{mis}(i)})\).
 
-\hypertarget{case-studies}{%
-\section{Case Studies}\label{case-studies}}
-
-Below, we will explain how to perform leave-one-out cross-validation for
-a lagged simultaneously autoregressive model applied to data of
-Neighborhood Crime in Columbus, Ohio {[}cite{]}.
-
-\hypertarget{loo-cv-for-lagged-sar-models}{%
-\subsection{LOO-CV for lagged SAR
-models}\label{loo-cv-for-lagged-sar-models}}
+\hypertarget{case-study}{%
+\section{Case Study}\label{case-study}}
 
 A common non-factorizable multivariate normal model is the
 simultaneously autoregressive (SAR) model, which is frequently used for
@@ -448,21 +496,23 @@ In order to demonstrate how to carry out the computations implied by
 these equations, we will first fit a lagged SAR model to data on crime
 in 49 different neighborhoods of Columbus, Ohio during the year 1980.
 The data was originally described in Anselin (1988) and ships with the
-spdep package.
+spdep package (Bivand \& Piras, 2015).
 
-In addition to the loo package (Vehtari et al., 2016a), for this
-analysis we used the brms interface (Bürkner, 2017b, 2017a) to Stan
+In addition to the loo package (Vehtari, Gelman, \& Gabry, 2018), for
+this analysis we use the brms interface (Bürkner, 2017, 2018) to Stan
 (Carpenter et al., 2017) to generate a Stan program and fit the model,
-and also the bayesplot and ggplot2 packages for plotting. The three
-variables in the data set relevant to this example are: \texttt{CRIME}:
-the number of residential burglaries and vehicle thefts per thousand
-households in the neighbood, \texttt{HOVAL}: housing value in units of
-\$1000 USD, and \texttt{INC}: household income in units of \$1000 USD.
-We will also use the object \texttt{COL.nb}, which is a list containing
-information about which neighborhoods border each other. From this list
-we will be able to construct the weight matrix to used to help account
-for the spatial dependency among the observations. The complete R code
-for this case study can be found at (loo vignette link).
+and also the bayesplot (Gabry \& Mahr, 2018) and ggplot2 (Wickham, 2016)
+packages for plotting. The three variables in the data set relevant to
+this example are: \texttt{CRIME}: the number of residential burglaries
+and vehicle thefts per thousand households in the neighbood,
+\texttt{HOVAL}: housing value in units of \$1000 USD, and \texttt{INC}:
+household income in units of \$1000 USD. We will also use the object
+\texttt{COL.nb}, which is a list containing information about which
+neighborhoods border each other. From this list we will be able to
+construct the weight matrix to used to help account for the spatial
+dependency among the observations. The complete R code for this case
+study can be found at
+(\url{http://mc-stan.org/loo/articles/loo2-non-factorizable.html}).
 
 A model predicting \texttt{CRIME} from \texttt{INC} and \texttt{HOVAL},
 while accounting for the spatial dependency via an SAR structure, can be
@@ -494,7 +544,7 @@ LOO-CV}\label{approximate-and-exact-loo-cv}}
 
 After fitting the model, the next step is to compute the pointwise
 log-likelihood values needed for approximate LOO-CV. To do this we use
-the recipe laid out in Section 3.
+the recipe laid out in Section \ref{nf-loo-cv}.
 
 The quality of the PSIS-LOO approximation can be investigated
 graphically by plotting the Pareto-k estimate for each observation.
@@ -511,30 +561,24 @@ approximation.
 Pareto-k-estimate of each observation.}
 \end{figure}
 
-The PSIS-LOO to approximation of the expected log predictive density
-(ELPD) for new data reveals \(\text{elpd}_{\text{approx}} =\) -187.25.
-This result still needs to be validated against exact LOO-CV, which is
+The PSIS-LOO-CV to approximation of the expected log predictive density
+for new data reveals \(\text{elpd}_{\text{approx}} =\) -187.25. This
+result still needs to be validated against exact LOO-CV, which is
 somewhat more involved, as we need to re-fit the model \(N\) times each
 time leaving out a single observations. For the lagged SAR model, we
 cannot just ignore the held-out observation entirely as this will change
 the prior of the other observations. In other words, the lagged SAR
 model does not have the marginalization property that holds, for
-instance, for Gaussian process models (cite). Instead, we have to model
-the held-out observation as a missing value, which is to be estimated
-along with the other model parameters (see (loo vignette link) for
+instance, for Gaussian process models. Instead, we have to model the
+held-out observation as a missing value, which is to be estimated along
+with the other model parameters (see
+\url{http://mc-stan.org/loo/articles/loo2-non-factorizable.html} for
 details on the R code).
-
-Next, we fit the model \(N\) times, each time leaving out a single
-observation and then computing the log predictive density for that
-observation. For obvious reasons, this takes much longer than the
-approximation we computed above, but it is necessary in order to
-validate the approximate LOO-CV method. Thanks to the PSIS-LOO
-approximation, in general doing these slow exact computations can be
-avoided.
 
 A first step in the validation of the pointwise predictive density is to
 compare the distribution of the implied response values for the left-out
-observation to the distribution of the \(y_i^{\mathrm{mis}}\)
+observation using the pointwise mean and standard deviation from
+(\ref{ypredpars}) to the distribution of the \(y_i^{\mathrm{mis}}\)
 posterior-predictive values estimated as part of the model. If the
 pointwise predictive density is correct, the two distributions should
 match very closely (up to sampling error). In Figure \ref{fig:yplots},
@@ -546,13 +590,14 @@ observations of in this example).
 \includegraphics[width=0.95\linewidth]{psis_non_factorizable_models_files/figure-latex/yplots-1} \caption{Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws (type = 'pp').}\label{fig:yplots}
 \end{figure}
 
-In the final step, we compute the ELPD based on the exact LOO-CV and
-compare it to the approximate PSIS-LOO result computed earlier. The
-results of the approximate (\(\text{elpd}_{\text{approx}} =\) -187.25)
-and exact LOO-CV (\(\text{elpd}_{\text{exact}} =\) -188.32) are similar
-but not as close as we would expect if there were no problematic
-observations. We can investigate this issue more closely by plotting the
-approximate against the exact pointwise ELPD values.
+In the final step, we compute the pointwise predictive density based on
+the exact LOO-CV and compare it to the approximate PSIS-LOO-CV result
+computed earlier. The results of the approximate
+(\(\text{elpd}_{\text{approx}} =\) -187.25) and exact LOO-CV
+(\(\text{elpd}_{\text{exact}} =\) -188.32) are similar but not as close
+as we would expect if there were no problematic observations. We can
+investigate this issue more closely by plotting the approximate against
+the exact pointwise ELPD values.
 
 \begin{figure}
 \centering
@@ -571,71 +616,109 @@ yields practically equivalent results for approximate and exact LOO-CV
 (\(\text{elpd}_{\text{approx},-4} =\) -172.94 vs.
 \(\text{elpd}_{\text{exact},-4} =\) -173.00). From this we can conclude
 that the difference we found when including \emph{all} observations does
-not indicate a bug in our implementation of the approximate LOO-CV but
-rather a violation of its assumptions.
+not indicate an error in the implementation of the approximate LOO-CV
+but rather a violation of its assumptions.
 
-\hypertarget{discussion}{%
-\section{Discussion}\label{discussion}}
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
 
 In summary, we have shown how to set up and validate approximate and
-exact LOO-CV for non-factorizable multivariate normal models using Stan
-with the \textbf{brms} and \textbf{loo} packages. Although we focused on
-the particular example of a spatial SAR model, the presented recipe
-applies more generally to models that can be expressed in terms of a
-multivariate normal likelihood.
+exact LOO-CV for non-factorizable multivariate normal models. We
+demonstrated the usefulness of our approach with a case study involving
+the non-factorizable spatial SAR model. Although we motivated the
+present paper by means of non-factorizable models (i.e.~models that
+cannot be factorized at all), we note that our approach also works for
+any Bayesian model that can be expressed in terms of a multivariate
+normal likelihood. That is, we can also apply it to models that are
+factorizable but for which the factorized representation is difficult to
+compute or not available to the researcher for some other reasons.
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
 \addcontentsline{toc}{section}{References}
 
 \hypertarget{refs}{}
+\leavevmode\hypertarget{ref-ando2010}{}%
+Ando, T., \& Tsay, R. (2010). Predictive likelihood for bayesian model
+selection and averaging. \emph{International Journal of Forecasting},
+\emph{26}(4), 744--763.
+
 \leavevmode\hypertarget{ref-anselin1988}{}%
 Anselin, L. (1988). \emph{Spatial econometrics: Methods and models}.
 Dordrecht: Kluwer Academic.
 
-\leavevmode\hypertarget{ref-brms2}{}%
-Bürkner, P.-C. (2017a). Advanced bayesian multilevel modeling with the r
-package brms. \emph{arXiv Preprint}, 1--15. Retrieved from
-\url{https://arxiv.org/abs/1705.11123}
+\leavevmode\hypertarget{ref-bivand2015}{}%
+Bivand, R., \& Piras, G. (2015). Comparing implementations of estimation
+methods for spatial econometrics. \emph{Journal of Statistical
+Software}, \emph{63}(18), 1--36. Retrieved from
+\url{http://www.jstatsoft.org/v63/i18/}
 
 \leavevmode\hypertarget{ref-brms1}{}%
-Bürkner, P.-C. (2017b). brms: An R package for bayesian multilevel
-models using Stan. \emph{Journal of Statistical Software}, \emph{80}(1),
-1--28.
+Bürkner, P.-C. (2017). brms: An R package for bayesian multilevel models
+using Stan. \emph{Journal of Statistical Software}, \emph{80}(1), 1--28.
 doi:\href{https://doi.org/10.18637/jss.v080.i01}{10.18637/jss.v080.i01}
+
+\leavevmode\hypertarget{ref-brms2}{}%
+Bürkner, P.-C. (2018). Advanced bayesian multilevel modeling with the R
+package brms. \emph{The R Journal}, 395--411. Retrieved from
+\url{https://journal.r-project.org/archive/2018/RJ-2018-017}
 
 \leavevmode\hypertarget{ref-carpenter2017}{}%
 Carpenter, B., Gelman, A., Hoffman, M., Lee, D., Goodrich, B.,
 Betancourt, M., \ldots{} Ridell, A. (2017). Stan: A probabilistic
 programming language. \emph{Journal of Statistical Software}.
 
+\leavevmode\hypertarget{ref-bayesplot}{}%
+Gabry, J., \& Mahr, T. (2018). \emph{Bayesplot: Plotting for bayesian
+models}. Retrieved from
+\url{https://CRAN.R-project.org/package=bayesplot}
+
+\leavevmode\hypertarget{ref-geisser1979}{}%
+Geisser, S., \& Eddy, W. F. (1979). A predictive approach to model
+selection. \emph{Journal of the American Statistical Association},
+\emph{74}(365), 153--160.
+
 \leavevmode\hypertarget{ref-sundararajan2001}{}%
 Sundararajan, S., \& Keerthi, S. S. (2001). Predictive approaches for
 choosing hyperparameters in gaussian processes. \emph{Neural
 Computation}, \emph{13}(5), 1103--1118.
 
-\leavevmode\hypertarget{ref-loo2016}{}%
-Vehtari, A., Gelman, A., \& Gabry, J. (2016a). \emph{loo: Efficient
-leave-one-out cross-validation and WAIC for Bayesian models.} Retrieved
-from \url{https://github.com/stan-dev/loo}
-
-\leavevmode\hypertarget{ref-vehtari2017b}{}%
+\leavevmode\hypertarget{ref-vehtari2017psis}{}%
 Vehtari, A., Gelman, A., \& Gabry, J. (2017a). Pareto smoothed
 importance sampling. \emph{arXiv Preprint}. Retrieved from
 \url{https://arxiv.org/abs/1507.02646}
 
-\leavevmode\hypertarget{ref-vehtari2017a}{}%
+\leavevmode\hypertarget{ref-vehtari2017loo}{}%
 Vehtari, A., Gelman, A., \& Gabry, J. (2017b). Practical bayesian model
 evaluation using leave-one-out cross-validation and waic.
 \emph{Statistics and Computing}, \emph{27}(5), 1413--1432. Retrieved
 from \url{http://link.springer.com/article/10.1007/s11222-016-9696-4}
 
+\leavevmode\hypertarget{ref-loo2018}{}%
+Vehtari, A., Gelman, A., \& Gabry, J. (2018). \emph{loo: Efficient
+leave-one-out cross-validation and WAIC for Bayesian models.} Retrieved
+from \url{https://github.com/stan-dev/loo}
+
+\leavevmode\hypertarget{ref-vehtari2002}{}%
+Vehtari, A., \& Lampinen, J. (2002). Bayesian model assessment and
+comparison using cross-validation predictive densities. \emph{Neural
+Computation}, \emph{14}(10), 2439--2468.
+
 \leavevmode\hypertarget{ref-vehtari2016}{}%
 Vehtari, A., Mononen, T., Tolvanen, V., Sivula, T., \& Winther, O.
-(2016b). Bayesian leave-one-out cross-validation approximations for
+(2016). Bayesian leave-one-out cross-validation approximations for
 gaussian latent variable models. \emph{Journal of Machine Learning
 Research}, \emph{17}(103), 1--38. Retrieved from
 \url{http://jmlr.org/papers/v17/14-540.html}
+
+\leavevmode\hypertarget{ref-vehtari2012}{}%
+Vehtari, A., Ojanen, J., \& others. (2012). A survey of bayesian
+predictive methods for model assessment, selection and comparison.
+\emph{Statistics Surveys}, \emph{6}, 142--228.
+
+\leavevmode\hypertarget{ref-ggplot2}{}%
+Wickham, H. (2016). \emph{Ggplot2: Elegant graphics for data analysis}.
+Springer-Verlag New York. Retrieved from \url{http://ggplot2.org}
 
 
 \end{document}
