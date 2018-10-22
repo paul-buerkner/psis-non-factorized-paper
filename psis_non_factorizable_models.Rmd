@@ -33,8 +33,8 @@ abstract: |
   context of temporal and spatial statistics are non-factorizable, but LOO-CV may still
   be an important measure for these models. For this reason, we derive how to
   compute and validate exact and approximate LOO-CV for non-factorizable models
-  that follow a multivariate normal likelhood.
-keywords: cross-validation, pareto-smoothed importance-sampling,
+  that follow a multivariate normal likelihood.
+keywords: cross-validation, Pareto-smoothed importance-sampling,
   non-factorizable models, SAR models
 lang: english
 output:
@@ -105,13 +105,13 @@ accuracy, for instance for the purpose of model comparison or selection
 new data to predict, one general approach to evaluating a model's predictive
 accuracy is cross-validation [@vehtari2002]. When doing cross-validation, the
 data is split into two subsets. Based on the first subset we fit the statistical
-model and then evaluate its predictive accuarcy for the second subset. We may do
+model and then evaluate its predictive accuracy for the second subset. We may do
 this once or many times each time leaving out another subset.
 
 One widely applied type of cross-validation is *leave-one-out cross-validation*
 (LOO-CV), where each time a single observation is left out and then predicted
 based on the model fit to the remaining data [@vehtari2017loo]. Predictive
-accuarcy is evaluated by first computing the expected log predictive density of
+accuracy is evaluated by first computing the expected log predictive density of
 the left-out observation and then taking the sum of these values over all observations
 to obtain the expected log predictive density as a single measure of predictive
 accuracy. Unfortunately, exact LOO-CV is costly as it requires to fit the model
@@ -158,7 +158,7 @@ using integrated importance sampling [see Section 3.6.1 in @vehtari2016]:
    \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}}
 \end{equation}
 
-In the above euquation, $w_i^{(s)}$ are importance weights to be computed as follows. First we compute the raw importance ratios
+In the above equation, $w_i^{(s)}$ are importance weights to be computed as follows. First we compute the raw importance ratios
 
 \begin{equation}
   r_i^{(s)} \propto \frac{1}{p(y_i \,|\, y_{-i}, \, \theta^{(s)})},
@@ -392,7 +392,7 @@ equations, we will first fit a lagged SAR model to data on crime in 49 different
 neighborhoods of Columbus, Ohio during the year 1980. The data was originally
 described in @anselin1988 and ships with the spdep package [@bivand2015].
 
-In addition to the loo package [@loo2018], for this analysis we use the brms interface [@brms1;@brms2] to Stan [@carpenter2017] to generate a Stan program and fit the model, and also the bayesplot [@bayesplot] and ggplot2 [@ggplot2] packages for plotting. The three variables in the data set relevant to this example are: `CRIME`: the number of residential burglaries and vehicle thefts per thousand households in the neighbood, `HOVAL`: housing value in units of \$1000 USD, and `INC`: household income in units of \$1000 USD. We will also use the object `COL.nb`, which is a list containing information about which neighborhoods border each other. From this list we will be able to construct the weight matrix to used to help account for the spatial dependency among the observations. The complete R code for this case study can be found at (http://mc-stan.org/loo/articles/loo2-non-factorizable.html).
+In addition to the loo package [@loo2018], for this analysis we use the brms interface [@brms1;@brms2] to Stan [@carpenter2017] to generate a Stan program and fit the model, and also the bayesplot [@bayesplot] and ggplot2 [@ggplot2] packages for plotting. The three variables in the data set relevant to this example are: `CRIME`: the number of residential burglaries and vehicle thefts per thousand households in the neighborhood, `HOVAL`: housing value in units of \$1000 USD, and `INC`: household income in units of \$1000 USD. We will also use the object `COL.nb`, which is a list containing information about which neighborhoods border each other. From this list we will be able to construct the weight matrix to used to help account for the spatial dependency among the observations. The complete R code for this case study can be found at (http://mc-stan.org/loo/articles/loo2-non-factorizable.html).
 
 A model predicting `CRIME` from `INC` and `HOVAL`, while accounting for the
 spatial dependency via an SAR structure, can be specified in brms as
