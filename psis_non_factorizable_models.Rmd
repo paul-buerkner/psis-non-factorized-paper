@@ -155,7 +155,7 @@ using integrated importance sampling [see Section 3.6.1 in @vehtari2016]:
 
 \begin{equation}
  p(y_i\,|\, y_{-i}) \approx
-   \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}}
+   \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}}.
 \end{equation}
 
 In the above equation, $w_i^{(s)}$ are importance weights to be computed as follows. First we compute the raw importance ratios
@@ -164,7 +164,7 @@ In the above equation, $w_i^{(s)}$ are importance weights to be computed as foll
   r_i^{(s)} \propto \frac{1}{p(y_i \,|\, y_{-i}, \, \theta^{(s)})},
 \end{equation}
 
-and then stabilize them using Pareto smoothed importance sampling to
+and then stabilize them using Pareto-smoothed importance-sampling to
 obtain the weights $w_i^{(s)}$ [@vehtari2017loo; @vehtari2017psis]. The
 resulting approximation is referred to as PSIS-LOO-CV [@vehtari2017loo].
 
@@ -247,7 +247,7 @@ predictive density becomes:
 
 In order to validate the approximate LOO-CV procedure, and also in order to allow
 exact computations to be made for a small number of leave-one-out folds for
-which the Pareto $k$ diagnostic [@vehtari2017psis] indicates an unstable
+which the Pareto-$k$ diagnostic [@vehtari2017psis] indicates an unstable
 approximation, we need to consider how we might to do _exact_ LOO-CV
 for a non-factorizable model. In the case of a Gaussian process that has the
 marginalization property, we could just drop the one row and column of $C$
@@ -378,7 +378,7 @@ y-\widetilde{W}^{-1}\eta \sim {\mathrm N}(0, \sigma^2(\widetilde{W}^{T}\widetild
 
 then this has the same form as the zero mean Gaussian process from above. Accordingly, we can compute the leave-one-out predictive densities with the equations from @sundararajan2001, replacing $y$ with $(y-\widetilde{W}^{-1}\eta)$ and taking the covariance matrix $C$ to be $\sigma^2(\widetilde{W}^{T}\widetilde{W})^{-1}$.
 
-### Neighborhood Crime in Columbus, Ohio
+## Neighborhood Crime in Columbus, Ohio
 
 ```{r, cache=FALSE}
 SEED <- 10001 
@@ -436,7 +436,7 @@ gglagsar <- mcmc_hist(par) +
 gginc + gghoval + gglagsar
 ```
 
-### Approximate and exact LOO-CV
+## Approximate and exact LOO-CV
 
 After fitting the model, the next step is to compute the pointwise log-likelihood values needed for approximate LOO-CV. To do this we use the recipe laid out in Section \ref{nf-loo-cv}.
 
@@ -464,9 +464,9 @@ log_ratios <- -loglik
 psis_result <- psis(log_ratios)
 ```
 
-The quality of the PSIS-LOO approximation can be investigated graphically by plotting the Pareto-k estimate for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:psis-res-nb), we see that the fourth observation is problematic and so may reduce the accuracy of the LOO-CV approximation.
+The quality of the PSIS-LOO approximation can be investigated graphically by plotting the Pareto-$k$ estimate for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:psis-res-nb), we see that the fourth observation is problematic and so may reduce the accuracy of the LOO-CV approximation.
 
-```{r psis-res-nb, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-k-estimate of each observation."}
+```{r psis-res-nb, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation."}
 plot(psis_result, label_points = TRUE, main = "")
 ```
 
