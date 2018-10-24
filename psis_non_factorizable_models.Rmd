@@ -137,7 +137,7 @@ observations by $i$ and denote the corresponding response value by $y_i$.
 Further, we use $y$ to indicate the response vector of all observations and
 $y_{-i}$ to indicate the response vector without the $i$th value. Model
 parameters are referred to as $\theta$. Throughout, a Bayesian model
-specification and estimation via Markov-Chain Monte-Carlo (MCMC) methods is
+specification and estimation via Markov chain Monte Carlo (MCMC) methods is
 assumed. To obtain the leave-one-out predictive density $p(y_i \,|\, y_{-i})$
 we need to integrate over $\theta$:
 
