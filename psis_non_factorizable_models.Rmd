@@ -119,7 +119,9 @@ as many times are there are observations in the data. Depending on the size of
 the data, complexity of the model, and estimation method, this can be
 practically infeasible as it simply requires too much time [@vehtari2017loo].
 For this reason, approximate versions of LOO-CV have been developed, most
-notably approximations via Pareto-smoothed importance-sampling [PSIS-LOO-CV; @vehtari2017loo; @vehtari2017psis], which is applicable to Bayesian models.
+notably approximations via Pareto-smoothed importance-sampling 
+[PSIS-LOO-CV; @vehtari2017loo; @vehtari2017psis], which is applicable to
+Bayesian models.
 
 A standard assumption of any such LOO-CV approach is that the joint likelihood
 of the model over all observations has to be factorizable, that is the
@@ -158,7 +160,8 @@ using integrated importance sampling [see Section 3.6.1 in @vehtari2016]:
    \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}}.
 \end{equation}
 
-In the above equation, $w_i^{(s)}$ are importance weights to be computed as follows. First we compute the raw importance ratios
+In the above equation, $w_i^{(s)}$ are importance weights to be computed as 
+follows. First we compute the raw importance ratios
 
 \begin{equation}
   r_i^{(s)} \propto \frac{1}{p(y_i \,|\, y_{-i}, \, \theta^{(s)})},
@@ -210,11 +213,15 @@ y \sim {\mathrm N}(0, \, K+\sigma^2 I),
 \end{equation}
 
 where $I$ is the identity matrix of appropriate dimension and $C = K+\sigma^2 I$
-is the covariance matrix of the model. Sundararajan and Keerthi's derivations
-make no use of the special form of $C$ for Gaussian process models and thus
-immediately generalize to the case of an arbitrary invertible covariance matrix
-$C$. For such models, the LOO predictive mean and standard deviation can be
-computed as follows:
+is the covariance matrix of the model. Sundararajan and Keerthi's equations are
+not usually used for LOO-CV of Gaussian process models, as in most the cases,
+Gaussian processes are combined with a factorizable likelihood so that simpler
+equations for univariate distributions can be applied. What makes Sundararajan
+and Keerthi's equations helpful for the purpose of the present paper, is our
+observation that their derivations make no use of the special form of $C$ for
+Gaussian process models and thus immediately generalize to the case of an
+arbitrary invertible covariance matrix $C$. For such models, the LOO predictive
+mean and standard deviation can be computed as follows:
 
 \begin{align}
 \label{ypredpars}
@@ -507,9 +514,9 @@ held-out observation entirely as this will change the prior of the other
 observations. In other words, the lagged SAR model does not have the
 marginalization property that holds, for instance, for Gaussian process models.
 Instead, we have to model the held-out observation as a missing value, which is
-to be estimated along with the other model parameters (see
-http://mc-stan.org/loo/articles/loo2-non-factorizable.html for details on the R
-code).
+to be estimated along with the other model parameters (see the case study 
+section in http://mc-stan.org/loo/articles/loo2-non-factorizable.html for 
+details on the R code).
 
 ```{r fit_dummy, cache = TRUE}
 # see help("mi", "brms") for details on the mi() usage
