@@ -22,7 +22,7 @@ affiliation:
   - id: 3
     institution: Department of Computer Science, Aalto University, Finland
 abstract: |
-  Cross-validation can be used to measure a models predictive accuracy for
+  Cross-validation can be used to measure a model's predictive accuracy for
   instance for the purpose of model comparison or selection. As exact
   cross-validation is often practically infeasible for Bayesian models because
   it requires too much time, approximate cross-validation methods have been

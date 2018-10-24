@@ -168,8 +168,8 @@ E-mail:
 \href{mailto:Aki.Vehtari@aalto.fi}{\nolinkurl{Aki.Vehtari@aalto.fi}}}
 
 \abstract{
-Cross-validation can be used to measure a models predictive accuracy for
-instance for the purpose of model comparison or selection. As exact
+Cross-validation can be used to measure a model's predictive accuracy
+for instance for the purpose of model comparison or selection. As exact
 cross-validation is often practically infeasible for Bayesian models
 because it requires too much time, approximate cross-validation methods
 have been developed; most notably methods for leave-one-out
@@ -600,7 +600,7 @@ In the final step, we compute the pointwise predictive density based on
 the exact LOO-CV and compare it to the approximate PSIS-LOO-CV result
 computed earlier. The results of the approximate
 (\(\text{elpd}_{\text{approx}} =\) -187.25) and exact LOO-CV
-(\(\text{elpd}_{\text{exact}} =\) -188.32) are similar but not as close
+(\(\text{elpd}_{\text{exact}} =\) -188.64) are similar but not as close
 as we would expect if there were no problematic observations. We can
 investigate this issue more closely by plotting the approximate against
 the exact pointwise ELPD values.
@@ -620,7 +620,7 @@ between the exact and approximate values is strong. In fact, summing
 over the pointwise ELPD values and leaving out the fourth observation
 yields practically equivalent results for approximate and exact LOO-CV
 (\(\text{elpd}_{\text{approx},-4} =\) -172.94 vs.
-\(\text{elpd}_{\text{exact},-4} =\) -173.00). From this we can conclude
+\(\text{elpd}_{\text{exact},-4} =\) -173.03). From this we can conclude
 that the difference we found when including \emph{all} observations does
 not indicate an error in the implementation of the approximate LOO-CV
 but rather a violation of its assumptions.
