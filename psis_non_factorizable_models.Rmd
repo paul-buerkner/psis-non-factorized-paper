@@ -580,7 +580,7 @@ distributions should match very closely (up to sampling error). In Figure
 observations and see that they match very closely (as is the case for all $49$
 observations of in this example).
 
-```{r yplots, cache = FALSE, fig.width=10, out.width="95%", fig.asp = 0.3, fig.cap="Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws (type = 'pp')."}
+```{r yplots, cache = FALSE, fig.width=10, out.width="95%", fig.asp = 0.3, fig.cap="Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp')."}
 res_sub <- res[res$obs %in% 1:4, ]
 ggplot(res_sub, aes(y, fill = type)) +
   geom_density(alpha = 0.6) +
@@ -642,6 +642,11 @@ that our approach also works for any Bayesian model that can be expressed in
 terms of a multivariate normal likelihood. That is, we can also apply it to
 models that are factorizable but for which the factorized representation is
 difficult to compute or not available to the researcher for some other reasons.
+
+# Acknowledgements
+
+We thank Daniel Simpson for useful discussion and the Academy of Finland
+(grants 298742, 313122) for partial support of this work.
 
 <br />
 

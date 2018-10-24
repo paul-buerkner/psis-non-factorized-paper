@@ -250,7 +250,7 @@ value by \(y_i\). Further, we use \(y\) to indicate the response vector
 of all observations and \(y_{-i}\) to indicate the response vector
 without the \(i\)th value. Model parameters are referred to as
 \(\theta\). Throughout, a Bayesian model specification and estimation
-via Markov-Chain Monte-Carlo (MCMC) methods is assumed. To obtain the
+via Markov chain Monte Carlo (MCMC) methods is assumed. To obtain the
 leave-one-out predictive density \(p(y_i \,|\, y_{-i})\) we need to
 integrate over \(\theta\):
 
@@ -593,7 +593,7 @@ see that they match very closely (as is the case for all \(49\)
 observations of in this example).
 
 \begin{figure}
-\includegraphics[width=0.95\linewidth]{psis_non_factorizable_models_files/figure-latex/yplots-1} \caption{Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws (type = 'pp').}\label{fig:yplots}
+\includegraphics[width=0.95\linewidth]{psis_non_factorizable_models_files/figure-latex/yplots-1} \caption{Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp').}\label{fig:yplots}
 \end{figure}
 
 In the final step, we compute the pointwise predictive density based on
@@ -638,6 +638,12 @@ any Bayesian model that can be expressed in terms of a multivariate
 normal likelihood. That is, we can also apply it to models that are
 factorizable but for which the factorized representation is difficult to
 compute or not available to the researcher for some other reasons.
+
+\hypertarget{acknowledgements}{%
+\section{Acknowledgements}\label{acknowledgements}}
+
+We thank Daniel Simpson for useful discussion and the Academy of Finland
+(grants 298742, 313122) for partial support of this work.
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
