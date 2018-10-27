@@ -473,7 +473,7 @@ psis_result <- psis(log_ratios)
 
 The quality of the PSIS-LOO approximation can be investigated graphically by plotting the Pareto-$k$ estimate for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:psis-res-nb), we see that the fourth observation is problematic and so may reduce the accuracy of the LOO-CV approximation.
 
-```{r psis-res-nb, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation."}
+```{r psis-res-nb, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation.", fig.width=10, fig.asp=0.5}
 plot(psis_result, label_points = TRUE, main = "")
 ```
 
@@ -605,7 +605,7 @@ earlier. The results of the approximate ($\text{elpd}_{\text{approx}} =$
 problematic observations. We can investigate this issue more closely by plotting
 the approximate against the exact pointwise ELPD values.
 
-```{r elpd-compare, fig.height=5, fig.cap = "Comparison of approximate and exact pointwise elpd values for the SAR model. Problematic observations are marked as red dots.", fig.height=3, fig.width=5}
+```{r elpd-compare, fig.cap = "Comparison of approximate and exact pointwise elpd values for the SAR model. Problematic observations are marked as red dots.", fig.height=2.5, fig.width=5}
 df <- data.frame(
   approx_elpd = psis_loo$pointwise[, "elpd_loo"],
   exact_elpd = exact_elpds
