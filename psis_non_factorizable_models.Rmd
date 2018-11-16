@@ -63,6 +63,7 @@ header-includes:
    - \usepackage{tcolorbox}
    - \usepackage{paralist}
    - \usepackage{multicol}
+   - \usepackage[onehalfspacing]{setspace}
    - \newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
 editor_options: 
   chunk_output_type: console
