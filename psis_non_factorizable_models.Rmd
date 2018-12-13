@@ -22,18 +22,12 @@ affiliation:
   - id: 3
     institution: Department of Computer Science, Aalto University, Finland
 abstract: |
-  Cross-validation can be used to measure a model's predictive accuracy for
-  instance for the purpose of model comparison or selection. As exact
-  cross-validation is often practically infeasible for Bayesian models because
-  it requires too much time, approximate cross-validation methods have been
-  developed; most notably methods for leave-one-out cross-validation (LOO-CV).
-  However, standard LOO-CV requires the likelihood to be factorizable, that is
-  the observations have to be conditionally independent given the model
-  parameters. Unfortunately, some important statistical models most notably in the
-  context of temporal and spatial statistics are non-factorizable, but LOO-CV may still
-  be an important measure for these models. For this reason, we derive how to
-  compute and validate exact and approximate LOO-CV for non-factorizable models
-  that follow a multivariate normal likelihood.
+  Cross-validation can be used to measure a model's predictive accuracy for the purpose of model comparison, averaging, or selection. 
+  Standard leave-one-out cross-validation (LOO-CV) requires the likelihood to be factorizable, but some important models in temporal and spatial statistics do not have this property. We derive how to
+  compute and validate both exact and approximate LOO-CV for 
+  Bayesian non-factorizable models with a multivariate normal likelihood
+  and demonstrate with an example of modeling spatially correlated 
+  crime data.
 keywords: cross-validation, Pareto-smoothed importance-sampling,
   non-factorizable models, SAR models
 lang: english
@@ -100,46 +94,48 @@ options(knitr.kable.NA = '')
 
 # Introduction
 
-After fitting a statistical model, we often want to measure its predictive
-accuracy, for instance for the purpose of model comparison or selection
-[@geisser1979; @vehtari2002; @ando2010; @vehtari2012]. In the absence of actual
-new data to predict, one general approach to evaluating a model's predictive
-accuracy is cross-validation [@vehtari2002]. When doing cross-validation, the
+After fitting a statistical model we often want to assess its predictive
+accuracy for the purpose of model comparison, averaging, or selection
+[@geisser1979; @vehtari2002; @ando2010; @vehtari2012]. In the absence of 
+new data with which to evaluate predictive performance, one general approach for evaluating a model's predictive accuracy is cross-validation [@vehtari2002]. When doing cross-validation, the
 data is split into two subsets. Based on the first subset we fit the statistical
 model and then evaluate its predictive accuracy for the second subset. We may do
-this once or many times each time leaving out another subset.
+this once or many times, each time leaving out another subset.
 
-One widely applied type of cross-validation is *leave-one-out cross-validation*
-(LOO-CV), where each time a single observation is left out and then predicted
+One widely used variant of cross-validation is *leave-one-out cross-validation*
+(LOO-CV), where observations are left out one at a time and then predicted
 based on the model fit to the remaining data [@vehtari2017loo]. Predictive
 accuracy is evaluated by first computing the expected log predictive density of
 the left-out observation and then taking the sum of these values over all observations
-to obtain the expected log predictive density as a single measure of predictive
-accuracy. Unfortunately, exact LOO-CV is costly as it requires to fit the model
+to obtain the expected log predictive density (ELPD) as a single measure of predictive
+accuracy. Unfortunately, exact LOO-CV is costly, as it requires fitting the model
 as many times are there are observations in the data. Depending on the size of
 the data, complexity of the model, and estimation method, this can be
-practically infeasible as it simply requires too much time [@vehtari2017loo].
+practically infeasible as it simply requires too much computation time [@vehtari2017loo].
 For this reason, approximate versions of LOO-CV have been developed, most
-notably approximations via Pareto-smoothed importance-sampling 
+notably using Pareto-smoothed importance-sampling 
 [PSIS-LOO-CV; @vehtari2017loo; @vehtari2017psis], which is applicable to
 Bayesian models.
 
 A standard assumption of any such LOO-CV approach is that the joint likelihood
-of the model over all observations has to be factorizable, that is the
+of the model over all observations has to be factorizable. That is, the
 observations have to be pairwise conditionally independent given the model
-parameters. The purpose of the present paper is to generalize PSIS-LOO-CV to
-non-factorized or non-factorizable models where observations are dependent even
-after conditioning on the model parameters.
+parameters. The purpose of this paper is to generalize exact and approximate
+LOO-CV to Bayesian models with non-factorizable multivariate normal likelihoods,
+where observations are dependent even after conditioning on the model
+parameters.
 
 ## Approximate LOO-CV using integrated importance-sampling
 
 We start by introducing the mathematical basis of approximative LOO-CV. We index
 observations by $i$ and denote the corresponding response value by $y_i$.
-Further, we use $y$ to indicate the response vector of all observations and
-$y_{-i}$ to indicate the response vector without the $i$th value. Model
-parameters are referred to as $\theta$. Throughout, a Bayesian model
-specification and estimation via Markov chain Monte Carlo (MCMC) methods is
-assumed. To obtain the leave-one-out predictive density $p(y_i \,|\, y_{-i})$
+Further, we use $y$ to indicate the response vector of all $N$ observations and
+$y_{-i}$ to indicate the response vector (of length $N-1$) leaving out the $i$th
+value. Model parameters are referred to as $\theta$. Throughout, a Bayesian
+model specification and estimation via Markov chain Monte Carlo (MCMC) methods
+is assumed.
+
+To obtain the leave-one-out predictive density $p(y_i \,|\, y_{-i})$
 we need to integrate over $\theta$:
 
 \begin{equation}
@@ -185,9 +181,8 @@ familiar form
 p(y \,|\, \theta) = \prod_{i=1}^N p(y_i \,|\, \theta).
 \end{equation}
 
-The function $p$ will be either a probability density function (PDF) or a
-probability mass function (PMF) depending on whether we have a continuous or
-discrete outcome. When $p(y)$ can be factorized in this way, the conditional
+The function $p$ will be either a probability density or mass function, depending on whether the outcome is continuous or
+discrete. When $p(y)$ can be factorized in this way, the conditional
 pointwise log-likelihood can be obtained easily by computing 
 $\log p(y_i \,|\, \theta)$ for each $i$. We then save each of these individual
 contributions to the log-likelihood rather than simply summing them to obtain
@@ -215,14 +210,15 @@ y \sim {\mathrm N}(0, \, K+\sigma^2 I),
 
 where $I$ is the identity matrix of appropriate dimension and $C = K+\sigma^2 I$
 is the covariance matrix of the model. Sundararajan and Keerthi's equations are
-not usually used for LOO-CV of Gaussian process models, as in most the cases,
+not usually used for LOO-CV of Gaussian process models because, in most the cases,
 Gaussian processes are combined with a factorizable likelihood so that simpler
-equations for univariate distributions can be applied. What makes Sundararajan
-and Keerthi's equations helpful for the purpose of the present paper, is our
-observation that their derivations make no use of the special form of $C$ for
-Gaussian process models and thus immediately generalize to the case of an
-arbitrary invertible covariance matrix $C$. For such models, the LOO predictive
-mean and standard deviation can be computed as follows:
+equations for univariate distributions can be applied. 
+
+What makes Sundararajan and Keerthi's equations helpful in the non-factorizable
+case is our observation that their derivations make no use of the special form
+of $C$ for Gaussian process models and thus immediately generalize to the case
+of an arbitrary invertible covariance matrix $C$. For such models, the LOO
+predictive mean and standard deviation can be computed as follows:
 
 \begin{align}
 \label{ypredpars}
@@ -259,8 +255,8 @@ which the Pareto-$k$ diagnostic [@vehtari2017psis] indicates an unstable
 approximation, we need to consider how we might to do _exact_ LOO-CV
 for a non-factorizable model. In the case of a Gaussian process that has the
 marginalization property, we could just drop the one row and column of $C$
-corresponding to the held out out observation. This does not hold in general for
-multivariate normal models, however, and to keep the original prior we may need
+corresponding to the held out observation. But this does not hold in general for
+multivariate normal models, and to keep the original prior we may need
 to maintain the full covariance matrix $C$ even when one of the observations is
 left out.
 
@@ -274,7 +270,7 @@ Then, we define
 y_{\mathrm{mis}(i)} = (y_1, \ldots, y_{i-1}, y_i^{\mathrm{mis}}, y_{i+1}, \ldots, y_N).
 \end{equation}
 
-to be the same as the full set of observations $y$, except replacing $y_i$ with
+to be the same as the full set of observations $y$ but replacing $y_i$ with
 the parameter $y_i^{\mathrm{mis}}$.
 
 Second, we compute the LOO predictive mean and standard deviations as above, but
@@ -301,7 +297,7 @@ $\mu_{\tilde{y},-i}$ and the left out observation $y_i$:
   - \frac{1}{2}\frac{(y_i-\mu_{\tilde{y},-i})^2}{\sigma^2_{\tilde{y},-i}}.
 \end{equation}
 
-Finally, the leave-one-out predictive distribution can then be estimated as
+Finally, the leave-one-out predictive distribution can be estimated as
 
 \begin{equation}
  p(y_i\,|\,y_{-i}) \approx \frac{1}{S} \sum_{s=1}^S p(y_i\,|\,y_{-i}, \theta_{-i}^{(s)}),
@@ -310,7 +306,7 @@ Finally, the leave-one-out predictive distribution can then be estimated as
 where $\theta_{-i}^{(s)}$ are draws from the posterior distribution
 $p(\theta\,|\,y_{\mathrm{mis}(i)})$.
 
-# Case Study
+# Case Study: spatially correlated crime data
 
 A common non-factorizable multivariate normal model is the simultaneously
 autoregressive (SAR) model, which is frequently used for spatially correlated
@@ -397,13 +393,13 @@ data(oldcol, package = "spdep")
 
 In order to demonstrate how to carry out the computations implied by these
 equations, we will first fit a lagged SAR model to data on crime in 49 different
-neighborhoods of Columbus, Ohio during the year 1980. The data was originally
+neighborhoods of Columbus, Ohio during the year 1980. The data set was originally
 described in @anselin1988 and ships with the spdep package [@bivand2015].
 
 In addition to the loo package [@loo2018], for this analysis we use the brms interface [@brms1;@brms2] to Stan [@carpenter2017] to generate a Stan program and fit the model, and also the bayesplot [@bayesplot] and ggplot2 [@ggplot2] packages for plotting. The three variables in the data set relevant to this example are: `CRIME`: the number of residential burglaries and vehicle thefts per thousand households in the neighborhood, `HOVAL`: housing value in units of \$1000 USD, and `INC`: household income in units of \$1000 USD. We will also use the object `COL.nb`, which is a list containing information about which neighborhoods border each other. From this list we will be able to construct the weight matrix to used to help account for the spatial dependency among the observations. The complete R code for this case study can be found at (http://mc-stan.org/loo/articles/loo2-non-factorizable.html).
 
 A model predicting `CRIME` from `INC` and `HOVAL`, while accounting for the
-spatial dependency via an SAR structure, can be specified in brms as
+spatial dependency via an SAR structure, can be specified with brms as
 follows:
 
 ```{r fit_nb_dummy, echo=TRUE, eval=FALSE}
@@ -472,7 +468,7 @@ log_ratios <- -loglik
 psis_result <- psis(log_ratios)
 ```
 
-The quality of the PSIS-LOO approximation can be investigated graphically by plotting the Pareto-$k$ estimate for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:psis-res-nb), we see that the fourth observation is problematic and so may reduce the accuracy of the LOO-CV approximation.
+The quality of the approximation can be investigated graphically by plotting the Pareto-$k$ estimate for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:psis-res-nb), we see that the fourth observation is problematic and so may reduce the accuracy of the LOO-CV approximation.
 
 ```{r psis-res-nb, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation.", fig.width=10, fig.asp=0.5}
 plot(psis_result, label_points = TRUE, main = "")
@@ -506,13 +502,12 @@ ggplot(data = df, aes(x = y, y = yloo, ymin = ymin, ymax = ymax)) +
 psis_loo <- loo(loglik)
 ```
 
-The PSIS-LOO-CV to approximation of the expected log predictive density for new
+The PSIS-LOO-CV approximation of the expected log predictive density for new
 data reveals $\text{elpd}_{\text{approx}} =$ `r psis_loo$estimates[1, 1]`. This
 result still needs to be validated against exact LOO-CV, which is somewhat more
 involved, as we need to re-fit the model $N$ times each time leaving out a
-single observations. For the lagged SAR model, we cannot just ignore the
-held-out observation entirely as this will change the prior of the other
-observations. In other words, the lagged SAR model does not have the
+single observation. For the lagged SAR model, we cannot just ignore the
+held-out observation entirely as this will change the prior distribution. In other words, the lagged SAR model does not have the
 marginalization property that holds, for instance, for Gaussian process models.
 Instead, we have to model the held-out observation as a missing value, which is
 to be estimated along with the other model parameters (see the case study 
@@ -579,7 +574,7 @@ as part of the model. If the pointwise predictive density is correct, the two
 distributions should match very closely (up to sampling error). In Figure
 \@ref(fig:yplots), we overlay these two distributions for the first four
 observations and see that they match very closely (as is the case for all $49$
-observations of in this example).
+observations in this example).
 
 ```{r yplots, cache = FALSE, fig.width=10, out.width="95%", fig.asp = 0.3, fig.cap="Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp')."}
 res_sub <- res[res$obs %in% 1:4, ]
@@ -637,9 +632,8 @@ assumptions.
 In summary, we have shown how to set up and validate approximate and exact
 LOO-CV for non-factorizable multivariate normal models. We demonstrated the
 usefulness of our approach with a case study involving the non-factorizable
-spatial SAR model. Although we motivated the present paper by means of
-non-factorizable models (i.e. models that cannot be factorized at all), we note
-that our approach also works for any Bayesian model that can be expressed in
+spatial SAR model. Although this paper focuses on 
+non-factorizable models (i.e. models that cannot be factorized at all), our approach also works for _any_ Bayesian model that can be expressed in
 terms of a multivariate normal likelihood. That is, we can also apply it to
 models that are factorizable but for which the factorized representation is
 difficult to compute or not available to the researcher for some other reasons.
