@@ -1,5 +1,17 @@
 \begin{thebibliography}{}
 
+\bibitem[\protect\citeauthoryear{Ando and Tsay}{Ando and Tsay}{2010}]{ando2010}
+Ando, T. and R.~Tsay (2010).
+\newblock Predictive likelihood for {Bayesian} model selection and averaging.
+\newblock {\em International Journal of Forecasting\/}~{\em 26\/}(4), 744--763.
+
+\bibitem[\protect\citeauthoryear{Geisser and Eddy}{Geisser and
+  Eddy}{1979}]{geisser1979}
+Geisser, S. and W.~F. Eddy (1979).
+\newblock A predictive approach to model selection.
+\newblock {\em Journal of the American Statistical Association\/}~{\em
+  74\/}(365), 153--160.
+
 \bibitem[\protect\citeauthoryear{Sundararajan and Keerthi}{Sundararajan and
   Keerthi}{2001}]{sundararajan2001}
 Sundararajan, S. and S.~S. Keerthi (2001).
@@ -27,11 +39,25 @@ Vehtari, A., A.~Gelman, and J.~Gabry (2018).
   for {B}ayesian Models.}
 \newblock R package version 1.0.0.
 
+\bibitem[\protect\citeauthoryear{Vehtari and Lampinen}{Vehtari and
+  Lampinen}{2002}]{vehtari2002}
+Vehtari, A. and J.~Lampinen (2002).
+\newblock Bayesian model assessment and comparison using cross-validation
+  predictive densities.
+\newblock {\em Neural computation\/}~{\em 14\/}(10), 2439--2468.
+
 \bibitem[\protect\citeauthoryear{Vehtari, Mononen, Tolvanen, Sivula, and
   Winther}{Vehtari et~al.}{2016}]{vehtari2016}
 Vehtari, A., T.~Mononen, V.~Tolvanen, T.~Sivula, and O.~Winther (2016).
 \newblock Bayesian leave-one-out cross-validation approximations for {Gaussian}
   latent variable models.
 \newblock {\em Journal of Machine Learning Research\/}~{\em 17\/}(103), 1--38.
+
+\bibitem[\protect\citeauthoryear{Vehtari and Ojanen}{Vehtari and
+  Ojanen}{2012}]{vehtari2012}
+Vehtari, A. and J.~Ojanen (2012).
+\newblock A survey of bayesian predictive methods for model assessment,
+  selection and comparison.
+\newblock {\em Statistics Surveys\/}~{\em 6}, 142--228.
 
 \end{thebibliography}

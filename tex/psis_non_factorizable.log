@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  27 FEB 2019 16:37
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  27 FEB 2019 16:41
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -693,10 +693,10 @@ sion > 4. Object streams disabled now.
 {/usr/local/texlive/2016/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
 [2] [3] [4] (./psis_non_factorizable.bbl) [5] (./psis_non_factorizable.aux) ) 
 Here is how much of TeX's memory you used:
- 5643 strings out of 493014
- 80511 string characters out of 6133351
- 159517 words of memory out of 5000000
- 9068 multiletter control sequences out of 15000+600000
+ 5655 strings out of 493014
+ 80730 string characters out of 6133351
+ 159727 words of memory out of 5000000
+ 9080 multiletter control sequences out of 15000+600000
  14759 words of font info for 57 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  53i,11n,92p,273b,268s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -716,7 +716,7 @@ e/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive
 016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/201
 6/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2016
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on psis_non_factorizable.pdf (5 pages, 196626 bytes).
+Output written on psis_non_factorizable.pdf (5 pages, 198097 bytes).
 PDF statistics:
  78 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

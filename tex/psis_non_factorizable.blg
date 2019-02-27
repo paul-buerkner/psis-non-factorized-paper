@@ -6,45 +6,45 @@ Database file #1: psis_non_factorizable_models.bib.bib
 Warning--no number and no volume in vehtari2017psis
 Warning--page numbers missing in vehtari2017psis
 Warning--empty organization in loo2018
-You've used 5 entries,
+You've used 9 entries,
             2861 wiz_defined-function locations,
-            644 strings with 5725 characters,
-and the built_in function-call counts, 3695 in all, are:
-= -- 299
-> -- 319
+            677 strings with 6390 characters,
+and the built_in function-call counts, 6681 in all, are:
+= -- 573
+> -- 527
 < -- 0
-+ -- 98
-- -- 101
-* -- 375
-:= -- 677
-add.period$ -- 15
-call.type$ -- 5
-change.case$ -- 40
-chr.to.int$ -- 4
-cite$ -- 8
-duplicate$ -- 83
-empty$ -- 195
-format.name$ -- 120
-if$ -- 681
++ -- 166
+- -- 181
+* -- 641
+:= -- 1207
+add.period$ -- 27
+call.type$ -- 9
+change.case$ -- 68
+chr.to.int$ -- 8
+cite$ -- 12
+duplicate$ -- 154
+empty$ -- 372
+format.name$ -- 216
+if$ -- 1232
 int.to.chr$ -- 2
 int.to.str$ -- 0
-missing$ -- 4
-newline$ -- 28
-num.names$ -- 48
-pop$ -- 26
+missing$ -- 8
+newline$ -- 48
+num.names$ -- 88
+pop$ -- 42
 preamble$ -- 1
-purify$ -- 69
+purify$ -- 121
 quote$ -- 0
-skip$ -- 89
+skip$ -- 177
 stack$ -- 0
-substring$ -- 175
-swap$ -- 28
+substring$ -- 365
+swap$ -- 51
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 96
+type$ -- 176
 warning$ -- 3
-while$ -- 39
+while$ -- 87
 width$ -- 0
-write$ -- 67
+write$ -- 119
 (There were 3 warnings)

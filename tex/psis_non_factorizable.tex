@@ -72,11 +72,11 @@ Bayesian non-factorizable models with a multivariate  normal likelihood.
 \section{Introduction}
 
 %After fitting a statistical model we often want to assess its predictive
-%accuracy for the purpose of model comparison, averaging, or selection
-%\citep{geisser1979, vehtari2002, ando2010, vehtari2012}.
-
+%accuracy 
 In the absence of new data, cross-validation is a general approach for evaluating
-a statistical model's predictive accuracy. One widely used variant of
+a statistical model's predictive accuracy for the purpose of model comparison, 
+averaging, or selection \citep{geisser1979, vehtari2002, ando2010, vehtari2012}.
+One widely used variant of
 cross-validation is \emph{leave-one-out cross-validation} (LOO-CV), where
 observations are left out one at a time and then predicted based on the model
 fit to the remaining data. Predictive accuracy is evaluated by first computing
