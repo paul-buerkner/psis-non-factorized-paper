@@ -95,9 +95,11 @@ A standard assumption of any such LOO-CV approach is that the joint likelihood
 of the model over all observations has to be factorizable. That is, the
 observations have to be pairwise conditionally independent given the model
 parameters. However, many important models do not have this property.
-Particularly in the fields of temporal and spatial statistics it is common to
+Particularly in temporal and spatial statistics it is common to
 fit models with multivariate normal likelihoods that have structured covariance
-matrices such that the likelihood does not factorize.
+matrices such that the likelihood does not factorize. This is typically due to the 
+fact that observations depend on other observations from different time periods 
+or different spatial units in addition to the dependence on the model parameters. 
 
 In this short paper we show how equations derived in \cite{sundararajan2001} can
 be repurposed and combined with PSIS to allow for performing efficient
@@ -119,7 +121,7 @@ log leave-one-out predictive densities $\log{p(y_i | y_{-i})}$ for every
 response value $y_i, \: i = 1, \ldots, N$, where $y_{-i}$ denotes all response
 values except observation $i$. This requires fitting the model $N$ times. For
 \emph{approximate} LOO-CV using only a single model fit, we instead calculate
-the pointwise log-likelihood (the pointwise log-predictive density evaluated at
+the pointwise log-likelihood (the log-predictive density evaluated at
 each data point), without leaving out any observations, and then apply an
 importance sampling correction \citep{vehtari2017loo}.
 
@@ -140,11 +142,9 @@ The situation is more complicated for \emph{non-factorizable} models in which
 response values are not conditionally independent. When there is residual
 dependence even after accounting for the model parameters, the conditional
 pointwise log-likelihood has the general form $\log p(y_i \,|\, y_{-i},
-\theta)$. Most often this is due to the fact that observations depend on other
-observations from different time periods or different spatial units. Computing
-this pointwise log-likelihood for non-factorizable models is often impossible,
-but there is a large class of multivariate normal models for which an analytical
-solution is available.
+\theta)$. Computing this pointwise log-likelihood for non-factorizable models is 
+often impossible, but there is a large class of multivariate normal models for which 
+an analytical solution is available.
 
 \cite{sundararajan2001} provide equations for the predictive mean and standard
 deviation for a zero-mean Gaussian process model with prior covariance $K$ and
