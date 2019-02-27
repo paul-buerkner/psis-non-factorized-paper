@@ -1,0 +1,294 @@
+\documentclass[11pt]{article}
+ \pdfminorversion=4
+\usepackage[utf8]{inputenc}
+\usepackage{amsfonts,epsfig}
+\usepackage[hyphens]{url}
+%\usepackage{hyperref}
+\usepackage{breakurl}
+\usepackage{comment}
+
+\usepackage{natbib}
+
+\linespread{1.25}
+
+\usepackage{relsize}
+\usepackage{fancyvrb}
+\usepackage{amsmath, amssymb}
+%%% Document layout, margins
+\usepackage{geometry}
+\geometry{letterpaper, textwidth=6.5in, textheight=9in, marginparsep=1em}
+%%% Section headings
+\usepackage{sectsty}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[normalem]{ulem}
+\sectionfont{\sffamily\bfseries\upshape\large}
+\subsectionfont{\sffamily\bfseries\upshape\normalsize}
+\subsubsectionfont{\sffamily\mdseries\upshape\normalsize}
+\makeatletter
+\renewcommand\@seccntformat[1]{\csname the#1\endcsname.\quad}
+
+\makeatletter
+\def\@maketitle{%
+  \begin{center}%
+  \let \footnote \thanks
+    {\large \@title \par}%
+    {\normalsize
+      \begin{tabular}[t]{c}%
+        \@author
+      \end{tabular}\par}%
+    {\small \@date}%
+  \end{center}%
+}
+\makeatother
+
+
+\title{\bf Bayesian leave-one-out cross-validation for non-factorizable normal models\footnote{
+We thank Daniel Simpson for useful discussion and the Academy of Finland
+(grants 298742, 313122) for partial support of this work.
+}\vspace{.1in}}
+\author{Paul-Christian B\"{u}rkner\footnote{Department of Psychology, University of M\"{u}nster, Germany.}
+  \and Jonah Gabry\footnote{Institute for Social and Economic Research and Policy, Columbia University.}
+  \and Aki Vehtari\footnote{Department of Computer Science, Aalto University, Finland.
+}\vspace{.1in}}
+\date{\today \vspace{-.1in}}
+\begin{document}\sloppy
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Cross-validation can be used to measure a model's predictive accuracy for the purpose 
+of model comparison, averaging, or selection. Standard leave-one-out cross-validation 
+(LOO-CV) requires the likelihood to be factorizable, but many important models in temporal 
+and spatial statistics do not have this property. We derive how to compute and validate 
+both exact and approximate LOO-CV for Bayesian non-factorizable models with a multivariate 
+normal likelihood. 
+
+\textbf{Keywords:} cross-validation, Pareto-smoothed importance-sampling,
+  non-factorizable models, SAR models.
+\end{abstract}
+
+
+\section{Introduction}
+
+%After fitting a statistical model we often want to assess its predictive
+%accuracy for the purpose of model comparison, averaging, or selection
+%\citep{geisser1979, vehtari2002, ando2010, vehtari2012}. 
+
+In the absence of new data, cross-validation is a general approach for evaluating 
+a statistical model's predictive accuracy. One widely used variant of cross-validation 
+is \emph{leave-one-out cross-validation} (LOO-CV), where observations are left out one 
+at a time and then predicted based on the model fit to the remaining data. Predictive
+accuracy is evaluated by first computing the expected log predictive density of
+the left-out observation and then taking the sum of these values over all observations
+to obtain the expected log predictive density (ELPD) as a single measure of predictive
+accuracy. Unfortunately, exact LOO-CV is costly, as it requires fitting the model
+as many times are there are observations in the data. Depending on the size of
+the data, complexity of the model, and estimation method, this can be
+practically infeasible as it simply requires too much computation time \citep{vehtari2017loo}.
+For this reason, approximate versions of LOO-CV have been developed, most
+notably using Pareto-smoothed importance-sampling 
+(PSIS, \cite{vehtari2017loo, vehtari2017psis}), which is applicable to Bayesian models.
+
+A standard assumption of any such LOO-CV approach is that the joint likelihood
+of the model over all observations has to be factorizable. That is, the
+observations have to be pairwise conditionally independent given the model
+parameters. However, many important models do not have this property. Particularly
+in the fields of temporal and spatial statistics it is common to fit models with
+multivariate normal likelihoods that have structured covariance matrices such
+that the likelihood does not factorize.
+
+In this short paper we show how equations derived in \cite{sundararajan2001} 
+can be repurposed and combined with PSIS to allow for performing efficient approximate 
+LOO-CV for \emph{any} multivariate normal Bayesian model with an invertible covariance matrix, 
+regardless of whether or not the likelihood factorizes. We also provide equations for computing
+exact LOO-CV for these models, which can be used to validate the approximation. 
+In online supplementary material we provide R code demonstrating how to carry out the approximation 
+described in the paper as well as comparisons between the approximate results and results from 
+exact LOO-CV.
+
+
+\section{Pointwise log-likelihood for non-factorizable normal models}
+
+When computing \emph{exact} LOO-CV for a Bayesian model we need to compute the 
+log LOO predictive densities $\log{p(y_i | y_{-i})}$ for every response value 
+$y_i, \: i = 1, \ldots, N$, where $y_{-i}$ denotes all response values except observation $i$. 
+This requires fitting the model $N$ times. For \emph{approximate} LOO-CV 
+using only a single model fit, we instead calculate the pointwise log-likelihood evaluated
+at each data point, without leaving any out, and then apply an importance sampling 
+correction \citep{vehtari2017loo}. The pointwise log-likelihood is straightforward to compute 
+for \emph{factorizable} models in which response values are conditionally independent 
+given the model parameters $\theta$ and the likelihood can be written in the familiar form
+%
+\begin{equation}
+p(y \,|\, \theta) = \prod_{i=1}^N p(y_i \,|\, \theta).
+\end{equation}
+%
+When $p(y)$ can be factorized in this way, the conditional pointwise log-likelihood can be obtained 
+easily by computing $\log p(y_i \,|\, \theta)$ for each $i$.
+
+The situation is more complicated for \emph{non-factorizable} models in which
+response values are not conditionally independent. When there is residual
+dependence even after accounting for the model parameters, the
+conditional pointwise log-likelihood has the general form $\log p(y_i \,|\, y_{-i}, \theta)$.
+Most often this is due to the fact that observations depend on other observations from 
+different time periods or different spatial units. Computing this pointwise log-likelihood for 
+non-factorizable models is often impossible, but there is a large class of multivariate normal 
+models for which an analytical solution is available. 
+
+\cite{sundararajan2001} provide equations for the predictive mean and standard deviation 
+for a zero-mean Gaussian process model with prior covariance $K$ and residual standard 
+deviation $\sigma$,
+%
+\begin{equation}
+y \sim {\mathrm N}(0, \, K+\sigma^2 I),
+\end{equation}
+%
+where $I$ is the identity matrix of appropriate dimension and $C = K+\sigma^2 I$
+is the covariance matrix of the model. These equations were not traditionally intended 
+to be used for LOO-CV of Gaussian process models because, in most cases,
+Gaussian processes are combined with a factorizable likelihood so that simpler
+equations for univariate distributions can be applied. But the derivations of Sundararajan and Keerthi's 
+equations make no use of the special form of $C$ for Gaussian process models and thus immediately 
+generalize to the case of an arbitrary invertible covariance matrix $C$. 
+
+For such models the LOO predictive mean and standard deviation can be computed 
+using Sundararajan and Keerthi's results as follows:
+%
+\begin{align}
+\label{ypredpars}
+  \mu_{\tilde{y},-i} &= y_i-\bar{c}_{ii}^{-1} g_i \nonumber \\
+  \sigma_{\tilde{y},-i} &= \sqrt{\bar{c}_{ii}^{-1}},
+\end{align}
+%
+where $g_i = \left[C^{-1} y\right]_i$ and $\bar{c}_{ii} = \left[C^{-1}\right]_{ii}$. 
+The log predictive density of the $i$th observation is 
+\begin{equation}
+  \log p(y_i \,|\, y_{-i},\theta)
+  = - \frac{1}{2}\log(2\pi)
+  - \frac{1}{2}\log \sigma^2_{-i}
+  - \frac{1}{2}\frac{(y_i-\mu_{-i})^2}{\sigma^2_{-i}},
+\end{equation}
+%
+and expressing this same equation in terms of $g_i$ and $\bar{c}_{ii}$, the log
+predictive density becomes:
+%
+\begin{equation}
+\label{logpointwise}
+  \log p(y_i \,|\, y_{-i},\theta)
+  = - \frac{1}{2}\log(2\pi)
+  + \frac{1}{2}\log \bar{c}_{ii}
+  - \frac{1}{2}\frac{g_i^2}{\bar{c}_{ii}}
+\end{equation}
+%
+(note that \cite{vehtari2016} has a typo in the corresponding Equation 34). 
+
+\section{Approximate LOO-CV for non-factorizable normal models}
+\label{sec-approx}
+
+The conditional pointwise log-likelihood (the pointwise log-predictive density evaluated at each data point) 
+is the only required input to the PSIS-LOO-CV algorithm from \cite{vehtari2017loo} and thus 
+Sundararajan and Keerthi's repurposed equations allow for approximate LOO-CV for \emph{any} 
+model that can be expressed conditionally in terms of a multivariate normal with invertible covariance matrix $C$, 
+including those where the likelihood does not factorize. For a Bayesian model fit using MCMC the procedure 
+is as follows: 
+
+\begin{enumerate}
+\item Fit the model using MCMC obtaining $S$ samples from the posterior distribution of $\theta$.
+\item For each of the $S$ draws of $\theta$, compute the pointwise log-likelihood value for each of the $N$ observations in $y$ 
+using the formula in \eqref{logpointwise}. The results can be stored in an $S \times N$ matrix. 
+\item Run the PSIS algorithm from \cite{vehtari2017loo} on the $S \times N$ matrix obtained in step 2. 
+For convenience the \texttt{loo} R package \citep{loo2018} provides this functionality.
+\end{enumerate}
+
+In the supplementary materials we demonstrate this method by computing approximate  
+LOO-CV for a lagged simultaneously autoregressive (SAR) model fit to the spatially 
+correlated crime data.
+
+\section{Validation using exact LOO-CV}
+
+In order to validate the approximate LOO-CV procedure, and also in order to allow
+exact computations to be made for a small number of leave-one-out folds for
+which the Pareto-$k$ diagnostic \citep{vehtari2017psis} indicates an unstable
+approximation, we need to consider how we might to do \emph{exact} LOO-CV
+for a non-factorizable model. Here we will provide the necessary equations and 
+in the supplementary materials we provide code for comparing the exact and 
+approximate versions of LOO-CV for the lagged SAR model and show that the 
+approximation works well.
+
+
+In the case of a Gaussian process that has the
+marginalization property, exactly LOO-CV is relatively straighforward: we can simply drop 
+the one row and column of the covariance matrix $C$ corresponding to the held out observation
+when refitting the model. But this does not hold in general for
+multivariate normal models, and to keep the original prior we may need
+to maintain the full covariance matrix $C$ even when one of the observations is
+left out.
+
+The general solution is to model $y_i$ as a missing observation and estimate it along
+with all of the other model parameters. For a conditional multivariate normal
+model, $\log p(y_i\,|\,y_{-i})$ can be computed as follows. First, we model
+$y_i$ as missing and denote the corresponding parameter $y_i^{\mathrm{mis}}$.
+Then, we define
+%
+\begin{equation}
+y_{\mathrm{mis}(i)} = (y_1, \ldots, y_{i-1}, y_i^{\mathrm{mis}}, y_{i+1}, \ldots, y_N).
+\end{equation}
+%
+to be the same as the full set of observations $y$ but replacing $y_i$ with
+the parameter $y_i^{\mathrm{mis}}$.
+
+Second, we compute the LOO predictive mean and standard deviations as above, but
+replace $y$ with $y_{\mathrm{mis}(i)}$ in the computation of
+$\mu_{\tilde{y},-i}$:
+%
+\begin{equation}
+\mu_{\tilde{y},-i} = y_{{\mathrm{mis}}(i)}-\bar{c}_{ii}^{-1}g_i,
+\end{equation}
+%
+where in this case we have
+%
+\begin{equation}
+g_i = \left[ C^{-1} y_{\mathrm{mis}(i)} \right]_i.
+\end{equation}
+%
+The conditional log predictive density is then computed with the above
+$\mu_{\tilde{y},-i}$ and the left out observation $y_i$:
+%
+\begin{equation}
+  \log p(y_i\,|\,y_{-i},\theta)
+  = - \frac{1}{2}\log(2\pi)
+  - \frac{1}{2}\log \sigma^2_{\tilde{y},-i}
+  - \frac{1}{2}\frac{(y_i-\mu_{\tilde{y},-i})^2}{\sigma^2_{\tilde{y},-i}}.
+\end{equation}
+%
+Finally, the leave-one-out predictive distribution can be estimated as
+%
+\begin{equation}
+ p(y_i\,|\,y_{-i}) \approx \frac{1}{S} \sum_{s=1}^S p(y_i\,|\,y_{-i}, \theta_{-i}^{(s)}),
+\end{equation}
+%
+where $\theta_{-i}^{(s)}$ are draws from the posterior distribution
+$p(\theta\,|\,y_{\mathrm{mis}(i)})$.
+
+\section{Conclusion}
+
+We have provided equations for that enable approximate 
+LOO-CV for non-factorizable multivariate normal models as well as the required
+equations for exact LOO-CV, which can be used to validate the approximation. 
+Although our motivation is the case of models that cannot be factorized at all, 
+our approach also works for \emph{any} Bayesian model that can be expressed in
+terms of a multivariate normal likelihood. This may also be useful with
+models that are factorizable but for which the factorized representation is
+difficult to compute or not available to the researcher for some other reason.
+
+
+\bibliography{psis_non_factorizable_models.bib}
+\bibliographystyle{chicago}
+
+
+%%: appendix
+%\clearpage
+%\section*{Appendix}
+
+\end{document}

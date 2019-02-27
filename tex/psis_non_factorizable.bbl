@@ -1,0 +1,37 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\citeauthoryear{Sundararajan and Keerthi}{Sundararajan and
+  Keerthi}{2001}]{sundararajan2001}
+Sundararajan, S. and S.~S. Keerthi (2001).
+\newblock Predictive approaches for choosing hyperparameters in {Gaussian}
+  processes.
+\newblock {\em Neural Computation\/}~{\em 13\/}(5), 1103--1118.
+
+\bibitem[\protect\citeauthoryear{Vehtari, Gelman, and Gabry}{Vehtari
+  et~al.}{2017a}]{vehtari2017psis}
+Vehtari, A., A.~Gelman, and J.~Gabry (2017a).
+\newblock Pareto smoothed importance sampling.
+\newblock {\em arXiv preprint\/}.
+
+\bibitem[\protect\citeauthoryear{Vehtari, Gelman, and Gabry}{Vehtari
+  et~al.}{2017b}]{vehtari2017loo}
+Vehtari, A., A.~Gelman, and J.~Gabry (2017b).
+\newblock Practical {Bayesian} model evaluation using leave-one-out
+  cross-validation and {WAIC}.
+\newblock {\em Statistics and Computing\/}~{\em 27\/}(5), 1413--1432.
+
+\bibitem[\protect\citeauthoryear{Vehtari, Gelman, and Gabry}{Vehtari
+  et~al.}{2018}]{loo2018}
+Vehtari, A., A.~Gelman, and J.~Gabry (2018).
+\newblock {\em {\bf loo}: {E}fficient Leave-One-Out Cross-Validation and {WAIC}
+  for {B}ayesian Models.}
+\newblock R package version 1.0.0.
+
+\bibitem[\protect\citeauthoryear{Vehtari, Mononen, Tolvanen, Sivula, and
+  Winther}{Vehtari et~al.}{2016}]{vehtari2016}
+Vehtari, A., T.~Mononen, V.~Tolvanen, T.~Sivula, and O.~Winther (2016).
+\newblock Bayesian leave-one-out cross-validation approximations for {Gaussian}
+  latent variable models.
+\newblock {\em Journal of Machine Learning Research\/}~{\em 17\/}(103), 1--38.
+
+\end{thebibliography}

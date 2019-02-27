@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: psis_non_factorizable.aux
+The style file: chicago.bst
+Database file #1: psis_non_factorizable_models.bib.bib
+Warning--no number and no volume in vehtari2017psis
+Warning--page numbers missing in vehtari2017psis
+Warning--empty organization in loo2018
+You've used 5 entries,
+            2861 wiz_defined-function locations,
+            644 strings with 5725 characters,
+and the built_in function-call counts, 3695 in all, are:
+= -- 299
+> -- 319
+< -- 0
++ -- 98
+- -- 101
+* -- 375
+:= -- 677
+add.period$ -- 15
+call.type$ -- 5
+change.case$ -- 40
+chr.to.int$ -- 4
+cite$ -- 8
+duplicate$ -- 83
+empty$ -- 195
+format.name$ -- 120
+if$ -- 681
+int.to.chr$ -- 2
+int.to.str$ -- 0
+missing$ -- 4
+newline$ -- 28
+num.names$ -- 48
+pop$ -- 26
+preamble$ -- 1
+purify$ -- 69
+quote$ -- 0
+skip$ -- 89
+stack$ -- 0
+substring$ -- 175
+swap$ -- 28
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 96
+warning$ -- 3
+while$ -- 39
+width$ -- 0
+write$ -- 67
+(There were 3 warnings)
