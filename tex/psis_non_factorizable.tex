@@ -61,8 +61,8 @@ Cross-validation can be used to measure a model's predictive accuracy for the
 purpose  of model comparison, averaging, or selection. Standard leave-one-out
 cross-validation  (LOO-CV) requires the likelihood to be factorizable, but many
 important models in temporal  and spatial statistics do not have this property.
-We derive how to compute and validate  both exact and approximate LOO-CV for
-Bayesian non-factorizable models with a multivariate  normal likelihood.
+We derive how to compute and validate both exact and approximate LOO-CV for
+Bayesian non-factorizable models with a multivariate normal likelihood.
 
 \textbf{Keywords:} cross-validation, Pareto-smoothed importance-sampling,
   non-factorizable models.
@@ -75,7 +75,7 @@ Bayesian non-factorizable models with a multivariate  normal likelihood.
 %accuracy 
 In the absence of new data, cross-validation is a general approach for evaluating
 a statistical model's predictive accuracy for the purpose of model comparison, 
-averaging, or selection \citep{geisser1979, vehtari2002, ando2010, vehtari2012}.
+averaging, or selection \citep{geisser1979, hoeting1999, ando2010, vehtari2012}.
 One widely used variant of
 cross-validation is \emph{leave-one-out cross-validation} (LOO-CV), where
 observations are left out one at a time and then predicted based on the model
@@ -86,10 +86,10 @@ predictive density (ELPD) as a single measure of predictive accuracy.
 Unfortunately, exact LOO-CV is costly, as it requires fitting the model as many
 times are there are observations in the data. Depending on the size of the data,
 complexity of the model, and estimation method, this can be practically
-infeasible as it simply requires too much computation time
-\citep{vehtari2017loo}. For this reason, approximate versions of LOO-CV have
-been developed, most notably using Pareto-smoothed importance-sampling (PSIS,
-\cite{vehtari2017loo, vehtari2017psis}), which is applicable to Bayesian models.
+infeasible as it simply requires too much computation time. 
+For this reason, approximate versions of LOO-CV have been developed 
+\citep{gelfand1992, vehtari2017loo}, most recently using 
+Pareto-smoothed importance-sampling (PSIS, \cite{vehtari2017loo, vehtari2017psis}).
 
 A standard assumption of any such LOO-CV approach is that the joint likelihood
 of the model over all observations has to be factorizable. That is, the
@@ -110,7 +110,8 @@ models, which can be used to validate the approximation. Throughout, a Bayesian
 model specification and estimation via Markov chain Monte Carlo (MCMC) is
 assumed. In online supplementary material we provide R code demonstrating how to
 carry out the approximation described in the paper as well as comparisons
-between the approximate results and results from exact LOO-CV.
+between the approximate results and results from exact LOO-CV.\footnote{
+Supplemental materials available at  \url{https://mc-stan.org/loo/articles/loo2-non-factorizable.html}.}
 
 
 \section{Pointwise log-likelihood for non-factorizable normal models}
@@ -123,7 +124,7 @@ values except observation $i$. This requires fitting the model $N$ times. For
 \emph{approximate} LOO-CV using only a single model fit, we instead calculate
 the pointwise log-likelihood (the log-predictive density evaluated at
 each data point), without leaving out any observations, and then apply an
-importance sampling correction \citep{vehtari2017loo}.
+importance sampling correction \citep{gelfand1992, vehtari2017loo}.
 
 The pointwise log-likelihood is straightforward to compute for
 \emph{factorizable} models in which response values are conditionally
@@ -195,7 +196,7 @@ Equation 34.}:
   - \frac{1}{2}\frac{g_i^2}{\bar{c}_{ii}}.
 \end{equation}
 %
-We can now evaluate equation \eqref{logpointwise} to compute the pointwise
+Evaluating equation \eqref{logpointwise} for each $y_i$ provides the pointwise
 log-likelihood values required for the PSIS-LOO-CV approximation.
 
 \section{Approximate LOO-CV for non-factorizable normal models}
@@ -221,22 +222,22 @@ matrix obtained in step 2. For convenience the \texttt{loo} R package
 
 In the supplementary materials we demonstrate this method by computing
 approximate LOO-CV for a lagged simultaneously autoregressive (SAR) model fit to
-the spatially correlated crime data.
+spatially correlated crime data.
 
 \section{Validation using exact LOO-CV}
 
 In order to validate the approximate LOO-CV procedure, and also in order to
 allow exact computations to be made for a small number of leave-one-out folds
 for which the Pareto-$k$ diagnostic \citep{vehtari2017psis} indicates an
-unstable approximation, we need to consider how we might to do \emph{exact}
+unstable approximation, we need to consider how we might do \emph{exact}
 LOO-CV for a non-factorizable model. Here we will provide the necessary
 equations and in the supplementary materials we provide code for comparing the
 exact and approximate versions.
 
 In the case of a Gaussian process that has the marginalization property, exact
-LOO-CV is relatively straightforward: we can simply drop the one row and column
-of the covariance matrix $C$ corresponding to the held out observation when
-refitting the model. But this does not hold in general for multivariate normal
+LOO-CV is relatively straightforward: when refitting the model we can simply 
+drop the one row and column of the covariance matrix $C$ corresponding to the 
+held out observation. But this does not hold in general for multivariate normal
 models, and to keep the original prior we may need to maintain the full
 covariance matrix $C$ even when one of the observations is left out.
 
@@ -289,7 +290,7 @@ $p(\theta\,|\,y_{\mathrm{mis}(i)})$.
 
 \section{Conclusion}
 
-We have provided equations for that enable both approximate and exact LOO-CV for
+We have provided equations that enable both approximate and exact LOO-CV for
 non-factorizable multivariate normal Bayesian models. Although exact LOO-CV is
 usually impractical, our exact LOO-CV procedure can be used to validate the more
 efficient PSIS-LOO-CV approximation, as we show in the supplementary materials.

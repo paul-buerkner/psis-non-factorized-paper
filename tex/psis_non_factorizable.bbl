@@ -12,12 +12,32 @@ Geisser, S. and W.~F. Eddy (1979).
 \newblock {\em Journal of the American Statistical Association\/}~{\em
   74\/}(365), 153--160.
 
+\bibitem[\protect\citeauthoryear{Gelfand, Dey, and Chang}{Gelfand
+  et~al.}{1992}]{gelfand1992}
+Gelfand, A., D.~Dey, and H.~Chang (1992, 01).
+\newblock Model determination using predictive distributions with
+  implementation via sampling-based methods.
+\newblock {\em Bayesian Statistics\/}~{\em 4}, 147--167.
+
+\bibitem[\protect\citeauthoryear{Hoeting, Madigan, Raftery, and
+  Volinsky}{Hoeting et~al.}{1999}]{hoeting1999}
+Hoeting, J.~A., D.~Madigan, A.~E. Raftery, and C.~T. Volinsky (1999, 11).
+\newblock Bayesian model averaging: a tutorial.
+\newblock {\em Statist. Sci.\/}~{\em 14\/}(4), 382--417.
+
 \bibitem[\protect\citeauthoryear{Sundararajan and Keerthi}{Sundararajan and
   Keerthi}{2001}]{sundararajan2001}
 Sundararajan, S. and S.~S. Keerthi (2001).
 \newblock Predictive approaches for choosing hyperparameters in {Gaussian}
   processes.
 \newblock {\em Neural Computation\/}~{\em 13\/}(5), 1103--1118.
+
+\bibitem[\protect\citeauthoryear{Vehtari, Gabry, Yao, and Gelman}{Vehtari
+  et~al.}{2018}]{loo2018}
+Vehtari, A., J.~Gabry, Y.~Yao, and A.~Gelman (2018).
+\newblock {\em {\bf loo}: {E}fficient Leave-One-Out Cross-Validation and {WAIC}
+  for {B}ayesian Models.}
+\newblock R package version 2.0.0.
 
 \bibitem[\protect\citeauthoryear{Vehtari, Gelman, and Gabry}{Vehtari
   et~al.}{2017a}]{vehtari2017psis}
@@ -31,20 +51,6 @@ Vehtari, A., A.~Gelman, and J.~Gabry (2017b).
 \newblock Practical {Bayesian} model evaluation using leave-one-out
   cross-validation and {WAIC}.
 \newblock {\em Statistics and Computing\/}~{\em 27\/}(5), 1413--1432.
-
-\bibitem[\protect\citeauthoryear{Vehtari, Gelman, and Gabry}{Vehtari
-  et~al.}{2018}]{loo2018}
-Vehtari, A., A.~Gelman, and J.~Gabry (2018).
-\newblock {\em {\bf loo}: {E}fficient Leave-One-Out Cross-Validation and {WAIC}
-  for {B}ayesian Models.}
-\newblock R package version 1.0.0.
-
-\bibitem[\protect\citeauthoryear{Vehtari and Lampinen}{Vehtari and
-  Lampinen}{2002}]{vehtari2002}
-Vehtari, A. and J.~Lampinen (2002).
-\newblock Bayesian model assessment and comparison using cross-validation
-  predictive densities.
-\newblock {\em Neural computation\/}~{\em 14\/}(10), 2439--2468.
 
 \bibitem[\protect\citeauthoryear{Vehtari, Mononen, Tolvanen, Sivula, and
   Winther}{Vehtari et~al.}{2016}]{vehtari2016}
