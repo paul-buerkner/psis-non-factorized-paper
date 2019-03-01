@@ -4,7 +4,7 @@
 \usepackage{amsfonts,epsfig}
 \usepackage[hyphens]{url}
 %\usepackage{hyperref}
-\usepackage{breakurl}
+%\usepackage{breakurl}
 \usepackage{comment}
 
 \usepackage{natbib}
@@ -108,7 +108,7 @@ invertible covariance matrix, regardless of whether or not the likelihood
 factorizes. We also provide equations for computing exact LOO-CV for these
 models, which can be used to validate the approximation. Throughout, a Bayesian
 model specification and estimation via Markov chain Monte Carlo (MCMC) is
-assumed. In online supplementary material we provide R code demonstrating how to
+assumed. In an online supplementary material we provide R code demonstrating how to
 carry out the approximation described in the paper as well as comparisons
 between the approximate results and results from exact LOO-CV.\footnote{
 Supplemental materials available at  \url{https://mc-stan.org/loo/articles/loo2-non-factorizable.html}.}
@@ -156,15 +156,15 @@ y \sim {\mathrm N}(0, \, K+\sigma^2 I),
 \end{equation}
 %
 where $I$ is the identity matrix of appropriate dimension and $C = K+\sigma^2 I$
-is the covariance matrix of the model. These equations were not traditionally
-intended to be used for LOO-CV of Gaussian process models because, in most
+is the covariance matrix of the model. In the context of Gaussian process models, 
+these equations did not actually find much practical application because, in most
 cases, Gaussian processes are combined with a factorizable likelihood so that
 simpler equations for univariate distributions can be applied. But the
 derivations of Sundararajan and Keerthi's equations make no use of the special
 form of $C$ for Gaussian process models and thus immediately generalize to the
 case of an arbitrary invertible covariance matrix $C$.
 
-For such models the LOO predictive mean and standard deviation can be computed
+For such models, the LOO predictive mean and standard deviation can be computed
 using the equations from \cite{sundararajan2001} as follows:
 %
 \begin{align}
@@ -237,8 +237,9 @@ exact and approximate versions.
 In the case of a Gaussian process that has the marginalization property, exact
 LOO-CV is relatively straightforward: when refitting the model we can simply 
 drop the one row and column of the covariance matrix $C$ corresponding to the 
-held out observation. But this does not hold in general for multivariate normal
-models, and to keep the original prior we may need to maintain the full
+held out observation without altering the prior of the other observations. 
+But this does not hold in general for all multivariate normal models. 
+Instead, in order to keep the original prior, we may need to maintain the full
 covariance matrix $C$ even when one of the observations is left out.
 
 The general solution is to model $y_i$ as a missing observation and estimate it
@@ -255,7 +256,7 @@ to be the same as the full set of observations $y$ but replacing $y_i$ with
 the \emph{parameter} $y_i^{\mathrm{mis}}$.
 
 Second, we compute the LOO predictive means and standard deviations using the
-equations from section \ref{sec-pointwise}, but replacing $y$ with
+equations from Section \ref{sec-pointwise}, but replacing $y$ with
 $y_{\mathrm{mis}(i)}$ in the computation of $\mu_{\tilde{y},-i}$:
 %
 \begin{equation}
@@ -303,7 +304,7 @@ for which the factorized representation is difficult to compute or not available
 to the researcher for some other reason.
 
 
-\bibliography{psis_non_factorizable_models.bib}
+\bibliography{psis_non_factorizable_models}
 \bibliographystyle{chicago}
 
 
