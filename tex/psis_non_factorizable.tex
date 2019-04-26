@@ -63,9 +63,11 @@ cross-validation  (LOO-CV) requires the likelihood to be factorizable, but many
 important models in temporal  and spatial statistics do not have this property.
 We derive how to compute and validate both exact and approximate LOO-CV for
 Bayesian non-factorizable models with a multivariate normal likelihood.
+In a case study, we apply this method to lagged simultaneously autoregressive 
+(SAR) models.
 
 \textbf{Keywords:} cross-validation, Pareto-smoothed importance-sampling,
-  non-factorizable models.
+  non-factorizable models, SAR models.
 \end{abstract}
 
 
@@ -281,6 +283,7 @@ approximate LOO-CV for the lagged SAR model fit to spatially correlated
 crime data.
 
 \section{Validation using exact LOO-CV}
+\label{exact-loo}
 
 In order to validate the approximate LOO-CV procedure, and also in order to
 allow exact computations to be made for a small number of leave-one-out folds
@@ -345,6 +348,125 @@ where $\theta_{-i}^{(s)}$ are draws from the posterior distribution
 $p(\theta\,|\,y_{\mathrm{mis}(i)})$.
 
 
+\section{Case Study: Neighborhood Crime in Columbus, Ohio}
+
+In order to demonstrate how to carry out the computations implied by
+these equations, we will first fit a lagged SAR model to data on crime
+in 49 different neighborhoods of Columbus, Ohio during the year 1980.
+The data was originally described in Anselin (1988) and ships with the
+spdep R package (Bivand \& Piras, 2015).
+
+The three variables in the data set relevant to
+this example are: \texttt{CRIME}: the number of residential burglaries
+and vehicle thefts per thousand households in the neighborhood,
+\texttt{HOVAL}: housing value in units of \$1000 USD, and \texttt{INC}:
+household income in units of \$1000 USD. In addition, we have information
+about the spatial relationship of neighborhoods from which we can
+construct the weight matrix to help account for the spatial
+dependency among the observations. 
+In addition to the loo package (Vehtari, Gelman, \& Gabry, 2018), for
+this analysis we use the brms interface (Bürkner, 2017, 2018) to Stan
+(Carpenter et al., 2017) to generate a Stan program and fit the model,
+and also the bayesplot (Gabry \& Mahr, 2018) and ggplot2 (Wickham, 2016)
+packages for plotting. The complete R code for this case
+study can be found at
+(\url{http://mc-stan.org/loo/articles/loo2-non-factorizable.html}).
+
+In Figure \ref{fig:plot-lagsar}, we see that both higher income and
+higher housing value predict lower crime rates in the neighborhood.
+Moreover, there seems to be substantial spatial correlation between
+adjacent neighborhoods, as indicated by the posterior distribution of
+the \texttt{lagsar} parameter.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.95\linewidth]{plot-lagsar-1.pdf}
+\caption{Posterior distribution of selected
+parameters of the lagged SAR model along with posterior median and 50\%
+central interval.}
+\label{fig:plot-lagsar}
+\end{figure}
+
+
+After fitting the model, the next step is to compute the pointwise
+log-likelihood values needed for approximate LOO-CV. To do this we use
+the recipe laid out in Section \ref{sec-pointwise}. The quality of the PSIS-LOO
+approximation can be investigated
+graphically by plotting the Pareto-\(k\) estimate for each observation.
+Ideally, they should not exceed \(0.5\), but in practice the algorithm
+turns out to be robust up to values of \(0.7\) (Vehtari et al., 2017b,
+2017a). In Figure \ref{fig:psis-res-nb}, we see that the fourth
+observation is problematic and so may reduce the accuracy of the LOO-CV
+approximation.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.95\linewidth]{psis-res-nb-1.pdf}
+\caption{PSIS diagnostic plot showing the
+Pareto-\(k\)-estimate of each observation.}
+\label{fig:psis-res-nb}
+\end{figure}
+
+The PSIS-LOO-CV to approximation of the expected log predictive density
+for new data reveals \(\text{elpd}_{\text{approx}} =\) -187.25. This
+result still needs to be validated against exact LOO-CV, which is
+somewhat more involved, as we need to re-fit the model \(N\) times each
+time leaving out a single observations. For the lagged SAR model, we
+cannot just ignore the held-out observation entirely as this will change
+the prior of the other observations. In other words, the lagged SAR
+model does not have the marginalization property that holds, for
+instance, for Gaussian process models. Instead, we have to model the
+held-out observation as a missing value, which is to be estimated along
+with the other model parameters (see Section \ref{exact-loo}).
+
+A first step in the validation of the pointwise predictive density is to
+compare the distribution of the implied response values for the left-out
+observation using the pointwise mean and standard deviation from
+(\ref{ypredpars}) to the distribution of the \(y_i^{\mathrm{mis}}\)
+posterior-predictive values estimated as part of the model. If the
+pointwise predictive density is correct, the two distributions should
+match very closely (up to sampling error). In Figure \ref{fig:yplots},
+we overlay these two distributions for the first four observations and
+see that they match very closely (as is the case for all \(49\)
+observations of in this example).
+
+\begin{figure}
+\includegraphics[width=0.95\linewidth]{yplots-1}
+\caption{Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp').}
+\label{fig:yplots}
+\end{figure}
+
+In the final step, we compute the pointwise predictive density based on
+the exact LOO-CV and compare it to the approximate PSIS-LOO-CV result
+computed earlier. The results of the approximate
+(\(\text{elpd}_{\text{approx}} =\) -187.25) and exact LOO-CV
+(\(\text{elpd}_{\text{exact}} =\) -188.64) are similar but not as close
+as we would expect if there were no problematic observations. We can
+investigate this issue more closely by plotting the approximate against
+the exact pointwise ELPD values.
+
+\begin{figure}
+\centering
+\includegraphics{elpd-compare-1.pdf}
+\caption{Comparison of approximate and exact
+pointwise elpd values for the SAR model. Problematic observations are
+marked as red dots.}
+\label{fig:elpd-compare}
+\end{figure}
+
+In Figure \ref{fig:elpd-compare}, the fourth data point -- the
+observation flagged as problematic by the PSIS-LOO approximation -- is
+colored in red and is the clear outlier. Otherwise, the correspondence
+between the exact and approximate values is strong. In fact, summing
+over the pointwise ELPD values and leaving out the fourth observation
+yields practically equivalent results for approximate and exact LOO-CV
+(\(\text{elpd}_{\text{approx},-4} =\) -172.94 vs.
+\(\text{elpd}_{\text{exact},-4} =\) -173.03). From this we can conclude
+that the difference we found when including \emph{all} observations does
+not indicate an error in the implementation of the approximate LOO-CV
+but rather a violation of its assumptions.
+
+
 \section{Conclusion}
 
 We have provided equations that enable both approximate and exact LOO-CV for
@@ -360,7 +482,7 @@ for which the factorized representation is difficult to compute or not available
 to the researcher for some other reason.
 
 
-\bibliography{psis_non_factorizable_models}
+\bibliography{psis_non_factorizable}
 \bibliographystyle{chicago}
 
 
