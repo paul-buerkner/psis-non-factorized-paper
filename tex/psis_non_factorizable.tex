@@ -48,7 +48,7 @@ We thank Daniel Simpson for useful discussion and the Academy of Finland
 (grants 298742, 313122) for partial support of this work.
 }\vspace{.1in}}
 \author{Paul-Christian B\"{u}rkner\footnote{Department of Psychology, University of M\"{u}nster, Germany.}
-  \and Jonah Gabry\footnote{Institute for Social and Economic Research and Policy, Columbia University.}
+  \and Jonah Gabry\footnote{Applied Statistics Center and Institute for Social and Economic Research and Policy, Columbia University, USA.}
   \and Aki Vehtari\footnote{Department of Computer Science, Aalto University, Finland.
 }\vspace{.1in}}
 \date{\today \vspace{-.1in}}
@@ -58,7 +58,7 @@ We thank Daniel Simpson for useful discussion and the Academy of Finland
 
 \begin{abstract}
 Cross-validation can be used to measure a model's predictive accuracy for the
-purpose  of model comparison, averaging, or selection. Standard leave-one-out
+purpose of model comparison, averaging, or selection. Standard leave-one-out
 cross-validation  (LOO-CV) requires the likelihood to be factorizable, but many
 important models in temporal  and spatial statistics do not have this property.
 We derive how to compute and validate both exact and approximate LOO-CV for
@@ -202,9 +202,14 @@ Equation 34.}:
   - \frac{1}{2}\frac{g_i^2}{\bar{c}_{ii}}.
 \end{equation}
 %
-The above equations may also be derived directly from multivariate normal theory. Evaluating equation \eqref{logpointwise} for each $y_i$ provides the pointwise
+The above equations may also be derived directly from multivariate normal theory. 
+Evaluating equation \eqref{logpointwise} for each $y_i$ provides the pointwise
 log-likelihood values required for the PSIS-LOO-CV approximation. 
-While the computational cost in the factorizable case is only $O(n)$, it is much higher in the non-factorizable case. The latter is dominated by the computation of $C^{-1}$, which is in $O(n^3)$ for dense $C$. However, if $C$ is sparse (see below for an example) the computational cost depends on the number of non-zeros, but will be less than $O(n^3)$.
+While the computational cost in the factorizable case is only $O(n)$, 
+it is much higher in the non-factorizable case. The latter is dominated by the 
+computation of $C^{-1}$, which is in $O(n^3)$ for dense $C$. However, if $C$ is 
+sparse (see below for an example) the computational cost depends on the number 
+of non-zeros, but will be less than $O(n^3)$.
 
 It often requires additional work to take a given multivariate normal
 model and express it in the same form as the zero mean Gaussian process 
@@ -225,8 +230,8 @@ or equivalently
 %
 where $\rho$ is a scalar spatial correlation parameter and $W$ is a user-defined matrix of weights. 
 The matrix $W$ has entires $w_{ii} = 0$ along the diagonal and the off-diagonal entries $w_{ij}$
-are larger when units $i$ and $j$ are closer to each other but mostly zero as well. In a linear model, the predictor 
-term is $\eta = X \beta$, with design matrix $X$ and regression coefficients $\beta$,
+are larger when units $i$ and $j$ are closer to each other but mostly zero as well. In a linear model, 
+the predictor term is $\eta = X \beta$, with design matrix $X$ and regression coefficients $\beta$,
 but the definition of the lagged SAR model holds for arbitrary $\eta$, so 
 these results are not restricted to the linear case.  
 
@@ -255,7 +260,11 @@ y - \widetilde{W}^{-1} \eta \sim \mathrm{N}\left(0, \sigma^2  (\widetilde{W}^T \
 Written in this way, the lagged SAR model has the same form as the zero mean Gaussian process from 
 \eqref{gp}. Accordingly, we can compute the leave-one-out predictive densities with the equations from 
 \cite{sundararajan2001}, replacing $y$ with $y - \widetilde{W}^{-1} \eta$ and taking the covariance
-matrix $C$ to be $\sigma^2  (\widetilde{W}^T \widetilde{W})^{-1}$. This implies $C^{-1}=\sigma^{-2}\widetilde{W} \widetilde{W}^T$ and so the overall computational cost is dominated by $\widetilde{W}^{-1} \eta$. In SAR models, $W$ is usally sparse and so is $\widetilde{W}$. Thus, if sparse matrix operations are used, then the computational cost for $C^{-1}$ will be less than $O(n^2)$ and for $\widetilde{W}^{-1}$ it will be less than $O(n^3)$ (depending on number of non-zeros and the fill pattern).
+matrix $C$ to be $\sigma^2  (\widetilde{W}^T \widetilde{W})^{-1}$. 
+This implies $C^{-1}=\sigma^{-2}\widetilde{W} \widetilde{W}^T$ and so the overall computational cost is 
+dominated by $\widetilde{W}^{-1} \eta$. In SAR models, $W$ is usally sparse and so is $\widetilde{W}$. 
+Thus, if sparse matrix operations are used, then the computational cost for $C^{-1}$ will be less than 
+$O(n^2)$ and for $\widetilde{W}^{-1}$ it will be less than $O(n^3)$ (depending on number of non-zeros and the fill pattern).
 
 \section{Approximate LOO-CV for non-factorizable normal models}
 \label{sec-approx}
@@ -354,7 +363,7 @@ $p(\theta\,|\,y_{\mathrm{mis}(i)})$.
 In order to demonstrate how to carry out the computations implied by
 these equations, we will first fit a lagged SAR model to data on crime
 in 49 different neighborhoods of Columbus, Ohio during the year 1980.
-The data was originally described in Anselin (1988) and ships with the
+The data was originally described in \cite{anselin1988} and ships with the
 spdep R package (Bivand \& Piras, 2015).
 
 The three variables in the data set relevant to
@@ -365,9 +374,9 @@ household income in units of \$1000 USD. In addition, we have information
 about the spatial relationship of neighborhoods from which we can
 construct the weight matrix to help account for the spatial
 dependency among the observations. 
-In addition to the loo package (Vehtari, Gelman, \& Gabry, 2018), for
-this analysis we use the brms interface (Bürkner, 2017, 2018) to Stan
-(Carpenter et al., 2017) to generate a Stan program and fit the model.
+In addition to the loo R package \citep{loo2018}, for
+this analysis we use the brms interface \citep{brms1} to Stan
+\citep{carpenter2017} to generate a Stan program and fit the model.
 The complete R code for this case study can be found in the supplemental materials.
 
 In Figure \ref{fig:plot-lagsar}, we see that both higher income and
@@ -389,13 +398,12 @@ central interval.}
 After fitting the model, the next step is to compute the pointwise
 log-likelihood values needed for approximate LOO-CV. To do this we use
 the recipe laid out in Section \ref{sec-pointwise}. The quality of the PSIS-LOO
-approximation can be investigated
-graphically by plotting the Pareto-\(k\) estimate for each observation.
-Ideally, they should not exceed \(0.5\), but in practice the algorithm
-turns out to be robust up to values of \(0.7\) (Vehtari et al., 2017b,
-2017a). In Figure \ref{fig:psis-res-nb}, we see that the fourth
-observation is problematic and so may reduce the accuracy of the LOO-CV
-approximation.
+approximation can be investigated graphically by plotting the Pareto-\(k\) 
+estimate for each observation. Ideally, they should not exceed \(0.5\), but 
+in practice the algorithm turns out to be robust up to values of \(0.7\) 
+\citep{vehtari2017loo,vehtari2017psis}. In Figure \ref{fig:psis-res-nb}, 
+we see that the fourth observation is problematic and so may reduce the 
+accuracy of the LOO-CV approximation.
 
 \begin{figure}
 \centering
@@ -430,7 +438,11 @@ observations in this example).
 
 \begin{figure}
 \includegraphics[width=0.95\linewidth]{yplots-1}
-\caption{Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp').}
+\caption{
+Implied response values of the first four observations computed 
+(a) after model fitting (type = 'loo') and 
+(b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp').
+}
 \label{fig:yplots}
 \end{figure}
 
