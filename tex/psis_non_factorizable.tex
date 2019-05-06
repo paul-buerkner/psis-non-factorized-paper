@@ -204,7 +204,7 @@ Equation 34.}:
 \end{equation}
 %
 Evaluating equation \eqref{logpointwise} for each $y_i$ provides the pointwise
-log-likelihood values required for the PSIS-LOO-CV approximation.
+log-likelihood values required for the PSIS-LOO-CV approximation. While the computational cost in factorizable case is $O(n)$, in non-factorizable case the computation cost is dominated by computation of $C^{-1}$. For full-rank dense $C$ the computational cost is $O(n^3)$, but for example in the example below $C$ is product of two sparse matrices and computational cost depends on the number of non-zeros, but is less than $O(n^3)$.
 
 Unfortunately, it often requires additional work to take a given multivariate normal
 model and express it in the same form as the zero mean Gaussian process 
@@ -255,7 +255,7 @@ y - \widetilde{W}^{-1} \eta \sim \mathrm{N}\left(0, \sigma^2  (\widetilde{W}^T \
 Written in this way, the lagged SAR model has the same form as the zero mean Gaussian process from 
 \eqref{gp}. Accordingly, we can compute the leave-one-out predictive densities with the equations from 
 \cite{sundararajan2001}, replacing $y$ with $y - \widetilde{W}^{-1} \eta$ and taking the covariance
-matrix $C$ to be $\sigma^2  (\widetilde{W}^T \widetilde{W})^{-1}$. 
+matrix $C$ to be $\sigma^2  (\widetilde{W}^T \widetilde{W})^{-1}$. Now $C^{-1}=\sigma^{-2}\widetilde{W} \widetilde{W}^T$ and the computational cost is dominated by $\widetilde{W}^{-1} \eta$. In SAR models $\widetilde{W}$ is usually sparse, and if sparse matrix operations are used then the computational cost for $C^{-1}$ is less than $O(n^2)$ and for $\widetilde{W}^{-1}$ computational cost is less than $O(n^3)$ (depending on number of non-zeros and the fill pattern).
 
 \section{Approximate LOO-CV for non-factorizable normal models}
 \label{sec-approx}
