@@ -166,7 +166,8 @@ is the covariance matrix of the model. In the context of Gaussian process models
 these equations did not actually find much practical application because, in most
 cases, Gaussian processes are combined with a factorizable likelihood so that
 simpler equations for univariate distributions can be applied. But the
-derivations of Sundararajan and Keerthi's equations make no use of the special
+derivations of Sundararajan and Keerthi's equations follow from multivariate 
+normal theory and make no use of the special
 form of $C$ for Gaussian process models and thus immediately generalize to the
 case of an arbitrary invertible covariance matrix $C$.
 
@@ -202,7 +203,6 @@ Equation 34.}:
   - \frac{1}{2}\frac{g_i^2}{\bar{c}_{ii}}.
 \end{equation}
 %
-The above equations may also be derived directly from multivariate normal theory. 
 Evaluating equation \eqref{logpointwise} for each $y_i$ provides the pointwise
 log-likelihood values required for the PSIS-LOO-CV approximation. 
 While the computational cost in the factorizable case is only $O(n)$, 
