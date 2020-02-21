@@ -1,0 +1,1261 @@
+---
+title: "Efficient leave-one-out cross-validation for Bayesian non-factorizable normal and student-t models"
+author: "Paul-Christian Bürkner $^{1*}$, Jonah Gabry $^2$, & Aki Vehtari $^1$"
+date: |
+  $^1$ Department of Computer Science, Aalto University, Finland\break
+  $^2$ Applied Statistics Center and ISERP, Columbia University, USA \break
+  $^*$ Corresponding author, Email: paul.buerkner@gmail.com
+abstract: |
+  Cross-validation can be used to measure a model's predictive accuracy for the
+  purpose of model comparison, averaging, or selection. Standard leave-one-out
+  cross-validation (LOO-CV) requires the likelihood to be factorizable, but many
+  important models in temporal and spatial statistics do not have this property.
+  A lot of such non-factorizable models fall into the category of multivariate
+  normal models, which can be generalized to multivariate student-t models for
+  increased robustness against outliers. We derive how to efficiently compute
+  and validate both exact and approximate LOO-CV for Bayesian non-factorizable
+  models with a multivariate normal or student-t likelihood. In a case study, we
+  apply this method to lagged simultaneously autoregressive (SAR)
+  models.\linebreak\linebreak Keywords: cross-validation, Pareto-smoothed
+  importance-sampling, non-factorizable models, Bayesian inference, SAR models
+lang: en-US
+class: man
+figsintext: true
+numbersections: true
+encoding: UTF-8
+bibliography: psis-non-factorizable-models
+biblio-style: apalike
+output:
+  bookdown::pdf_document2:
+     citation_package: natbib
+     keep_tex: false
+     toc: false
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage[utf8]{inputenc}
+   - \usepackage[T1]{fontenc}
+   - \usepackage{setspace}
+   - \onehalfspacing
+   - \newtheorem{proposition}{Proposition}
+   #- \setcitestyle{round}
+   - \newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE, cache = FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(papaja)
+library(brms)
+#library(patchwork)
+library(gridExtra)
+library(loo)
+library(bayesplot)
+
+# set ggplot theme
+color_scheme_set("brightblue")
+theme_set(theme_default())
+
+# set rstan options
+rstan::rstan_options(auto_write = TRUE)
+options(mc.cores = max(1, parallel::detectCores() - 1))
+
+# enables / disables caching for all chunks of code
+knitr::opts_chunk$set(
+  cache = TRUE,
+  warning = FALSE, 
+  message = FALSE,
+  eval = TRUE,
+  echo = FALSE
+)
+# Register an inline hook:
+knitr::knit_hooks$set(inline = function(x) {
+  x <- sprintf("%1.1f", x)
+  paste(x, collapse = ", ")
+})
+options(knitr.kable.NA = '')
+```
+
+```{r functions}
+plot_ks <- function(loo, k_thres = 0.7) {
+  ks <- loo$diagnostics$pareto_k
+  ids <- seq_along(ks)
+  dat_ks <- data.frame(ks = ks, ids = ids)
+  ggplot(dat_ks, aes(x = ids, y = ks)) + 
+    geom_point(aes(color = ks > k_thres), shape = 3, show.legend = FALSE) + 
+    geom_hline(yintercept = k_thres, linetype = 2, color = "red2") + 
+    geom_hline(yintercept = 0.5, linetype = 2, color = "grey") + 
+    scale_color_manual(values = c("cornflowerblue", "darkblue")) + 
+    labs(x = "Data point", y = "Pareto k") + 
+    ylim(-0.2, 1)
+}
+```
+
+# Introduction
+
+In the absence of new data, cross-validation is a general approach for
+evaluating a statistical model's predictive accuracy for the purpose of model
+comparison, averaging, or selection [@geisser1979; @hoeting1999; @ando2010;
+@vehtari2012]. One widely used variant of cross-validation is
+\emph{leave-one-out cross-validation} (LOO-CV), where observations are left out
+one at a time and then predicted based on the model fit to the remaining data.
+Predictive accuracy is evaluated by first computing a pointwise predictive
+measure and then taking the sum of these values over all observations to obtain
+a single measure of predictive accuracy [e.g., @vehtari2017loo].
+In this paper, we focus on the expected log predictive density (ELPD) as measure
+of predictive accuracy. The ELPD takes the whole predictive distribution into
+account and is less focussed on the bulk of the distribution as are other common
+measures such as root mean squared error (RMSE) or mean absolute error [MAE; see
+@vehtari2012 for details]. Exact LOO-CV is costly, as it requires fitting the
+model as many times as there are observations in the data. Depending on the size
+of the data, complexity of the model, and estimation method, this can be
+practically infeasible as it simply requires too much computation time. For this
+reason, approximate versions of LOO-CV have been developed [@gelfand1992,
+@vehtari2017loo], most recently using Pareto-smoothed importance-sampling [PSIS;
+@vehtari2017loo; @vehtari2017psis].
+
+A standard assumption of any such LOO-CV approach using the ELPD is that the
+joint likelihood of the model over all observations has to be factorizable. That
+is, the observations have to be pairwise conditionally independent given the
+model parameters. However, many important models do not have this property.
+Particularly in temporal and spatial statistics it is common to fit models with
+multivariate normal likelihoods that have structured covariance matrices such
+that the likelihood does not factorize. This is typically due to the fact that
+observations depend on other observations from different time periods or
+different spatial units in addition to the dependence on the model parameters.
+
+It is well known that (multivariate) normal models are easily influenced by
+outliers due to the light tails of the (multivariate) normal distribution [e.g.,
+@schwager1982]. Hence, generalizations of the multivariate normal distribution
+have been suggested that are more robust against outliers, most notably the
+multivariate student-t distribution [e.g., @zellner1976]. This distribution has
+an additional positive *degrees of freedom* parameter usually denoted as $\nu$,
+which controls the tails of the distribution. If $\nu$ small, the tails are very
+fat making outliers less surprising under the implied distribution and thus less
+influencial for the resulting parameter estimates. If $\nu$ is large, the
+multivariate student-t distribution becomes more similar to the corresponding
+multivariate normal distribution and is equal to the latter for $\nu \rightarrow
+\infty$. As $\nu$ can be estimated alongside the other model parameters in
+student-t models, the fatness of the tails is flexibly adjusted based on pattern
+of the observed response values.
+
+In this paper we derive how to perform efficient approximate LOO-CV for
+\emph{any} Bayesian multivariate normal or student-t model with an invertible
+covariance matrix, regardless of whether or not the likelihood factorizes. We
+also provide equations for computing exact LOO-CV for these models, which can be
+used to validate the approximation and to handle problematic observations. 
+Throughout, a Bayesian model specification
+and estimation via Markov chain Monte Carlo (MCMC) is assumed. We have
+implemented the developed methods in the R package brms [@brms1; @brms2]. 
+All materials including R source code are available in an online
+supplement.\footnote{Supplemental materials available at
+\url{https://github.com/paul-buerkner/psis-non-factorizable-paper}.}
+
+# Pointwise log-likelihood for non-factorizable models {#pwnf}
+
+When computing ELPD-based \emph{exact} LOO-CV for a Bayesian model we need to
+compute the log leave-one-out predictive densities $\log{p(y_i | y_{-i})}$ for
+every response value $y_i, \: i = 1, \ldots, N$, where $y_{-i}$ denotes all
+response values except observation $i$. To obtain $p(y_i | y_{-i})$, we need to
+integrate over the model parameters $\theta$:
+<!-- -->
+\begin{equation}
+\label{loo-pd}
+p(y_i\,|\,y_{-i}) =
+  \int p(y_i\,|\, y_{-i}, \theta) \, p(\theta\,|\, y_{-i}) \,d \theta
+\end{equation}
+<!-- -->
+Here, $p(\theta\,|\, y_{-i})$ is the leave-one-out posterior distribution for
+$\theta$, that is, the posterior distribution for $\theta$ obtained by fitting
+the model while holding out the $i$th observation (in Section
+\ref{approx-loo-cv}, we will show how refitting the model to data $y_{-i}$ can
+be avoided). The pointwise log-likelihood $p(y_i\,|\, y_{-i}, \theta)$ is
+straightforward to compute for \emph{factorizable} models in which response
+values are conditionally independent given $\theta$, that is, if 
+$p(y_i\,|\,y_{-i}, \theta) = p(y_i\,|\, \theta)$. The overall likelihood can then be
+written in the familiar form
+<!-- -->
+\begin{equation}
+p(y \,|\, \theta) = \prod_{i=1}^N p(y_i \,|\, \theta).
+\end{equation}
+<!-- -->
+When $p(y \,|\, \theta)$ factorizes this way, the conditional
+pointwise log-likelihood can be obtained easily through 
+$\log p(y_i \,|\, \theta)$ for each $i$ with computational cost $O(n)$. 
+
+The situation is more
+complicated for \emph{non-factorizable} models in which response values are not
+conditionally independent. When there is residual dependence even after
+accounting for the model parameters, the conditional pointwise log-likelihood
+continues to have the general form $\log p(y_i \,|\, y_{-i}, \theta)$. Computing
+this pointwise log-likelihood for non-factorizable models is often impossible,
+but there is a large class of multivariate normal and student-t models for which
+we will provide efficient analytical solutions in this paper.
+
+## Non-factorizable normal models
+
+The density of the $N$ dimensional multivariate normal distribution 
+of vector $y$ is given by
+<!-- -->
+\begin{equation}
+\label{mvnormal}
+  p(y | \mu, \Sigma) = \frac{1}{\sqrt{(2 \pi)^N |\Sigma|}} 
+  \exp \left(-\frac{1}{2}(y - \mu)^{\rm T} \Sigma^{-1} (y - \mu) \right)
+\end{equation}
+<!-- -->
+with mean vector $\mu$ and covariance matrix $\Sigma$. Usually, $\mu$ and
+$\Sigma$ are functions of the model parameters $\theta$, that is, $\mu =
+\mu(\theta)$ and $\Sigma = \Sigma(\theta)$. Unless necessary, we omit the
+dependence of $\mu$ and $\Sigma$ on $\theta$ in the following for notational
+convenience. Using standard multivariate normal theory [e.g., @tong2012], we know
+that the conditional distribution of $p(y_i | y_{-i}, \theta)$ of the $i$th
+observation is univariate normal with mean
+<!-- -->
+\begin{equation}
+\label{cmean}
+  \tilde{\mu}_{i} = \mu_i + \sigma_{i,-i} \Sigma^{-1}_{-i} (y_{-i} - \mu_{-i})
+\end{equation}
+<!-- -->
+and variance
+<!-- -->
+\begin{equation}
+\label{csd}
+  \tilde{\sigma}_{i} = \sigma_{ii} + \sigma_{i,-i} \Sigma^{-1}_{-i} \sigma_{-i,i}
+\end{equation}
+<!-- -->
+Here, $\Sigma_{-i}$ is the covariance matrix of all but the $i$th observation,
+which is obtainable from $\Sigma$ by removing the $i$th row and column,
+$\Sigma^{-1}_{-i}$ is the inverse of $\Sigma_{-i}$, and $\mu_{-i}$ is the mean
+vector $\mu$ without the $i$th element. Further, $\sigma_{i,-i}$ and
+$\sigma_{-i,i}$ are the $i$th row and column vectors of $\Sigma$, respectively,
+without the $i$th element and $\sigma_{ii}$ is the $i$th diagnonal element of
+$\Sigma$. Equations \eqref{cmean} and \eqref{csd} can be used already to compute
+the pointwise log-likelihood values in the normal case as
+<!-- -->
+\begin{equation}
+\label{lp-normal}
+  \log p(y_i \,|\, y_{-i},\theta)
+  = - \frac{1}{2}\log(2\pi \tilde{\sigma}_{i}) 
+- \frac{1}{2}\frac{(y_i-\tilde{\mu}_{i})^2}{\tilde{\sigma}_{i}}.
+\end{equation}
+<!-- -->
+Evaluating equation \eqref{lp-normal} for each $y_i$ and each posterior draw 
+$\theta_s$ then constitutes the input for the LOO-CV computations.
+However, the resulting procedure is quite inefficient.
+Computational cost is usually dominated by the computation of
+$\Sigma_{-i}^{-1}$, which is in $O(n^k)$. If $\Sigma$ is dense, we have $k = 3$,
+and for sparse $\Sigma$ or reduced rank computations, we have $2 < k < 3$. Since
+$\Sigma_{-i}^{-1}$ needs to be computed for each $i$, this increases the overall
+complexity to $O(N^{k + 1})$. If $\Sigma_{-i}$ additionally depends on the model
+parameters $\theta$ in a non-trivial manner, which is the case for most models
+of practical relevance, it needs to be inverted for each of the $S$ posterior
+draws. Thus, the overall complexity increases further to $O(S N^{k+1})$, which
+can be considered quite inefficient. Accordingly, we seek to find
+more efficient expressions for $\tilde{\mu}_{i}$ and $\tilde{\sigma}_{i}$
+that bring it back into computationally feasible regions.
+<!-- -->
+\begin{proposition}
+\label{prop-eff-normal}
+If $y$ is multivariate normal with mean vector $\mu$ and covariance matrix
+$\Sigma$, then the conditional mean and standard deviation of $y_i$ given $y_{-i}$
+for any observation $i$ can be computed as
+\begin{equation}
+\label{cmean2}
+  \tilde{\mu}_{i} = y_i - \frac{g_i}{\bar{\sigma}_{ii}},
+\end{equation}
+\begin{equation}
+\label{csd2}
+  \tilde{\sigma}_{i} = \frac{1}{\bar{\sigma}_{ii}},
+\end{equation}
+where $g_i = \left[\Sigma^{-1} (y - \mu)\right]_i$ and 
+$\bar{\sigma}_{ii} = \left[\Sigma^{-1}\right]_{ii}$. 
+\end{proposition}
+<!-- -->
+The proof based on results of
+@sundararajan2001 is shown in the Appendix. Contrary to the brute force
+computations in \eqref{cmean} and \eqref{csd} where $\Sigma_{-i}$ has to be
+inverted separately for each $i$, \eqref{cmean2} and \eqref{csd2} require
+inverting the full covariance matrix $\Sigma$ only once and reuse it for each
+$i$. Thus, the computational cost reduces to $O(N^k)$ if $\Sigma$ is independent
+of $\theta$ and $O(S N^k)$ otherwise. If the model is parameterized
+in terms of the covariance matrix $\Sigma = \Sigma(\theta)$, it is not possible
+to reduce the complexity further as inverting $\Sigma$ is unavoidable.
+However, if the model is parameterized
+directly through the inverse of $\Sigma$, that is $\Sigma^{-1} = \Sigma^{-1}(\theta)$,
+complexity goes down to $O(S N^2)$. Note that the latter is not possible in 
+the brute force approach as both $\Sigma$ and $\Sigma^{-1}$ are required
+in this case.
+
+<!--
+\cite{sundararajan2001} provide equations for the predictive mean and standard
+deviation for a zero-mean Gaussian process model with prior covariance $K$ and
+residual standard deviation $\sigma$,
+\begin{equation}
+\label{gp}
+y \sim {\mathrm N}(0, \, K+\sigma^2 I),
+\end{equation}
+where $I$ is the identity matrix of appropriate dimension and $C = K+\sigma^2 I$
+is the covariance matrix of the model. In the context of Gaussian process models, 
+these equations did not actually find much practical application because, in most
+cases, Gaussian processes are combined with a factorizable likelihood so that
+simpler equations for univariate distributions can be applied. But the
+derivations of Sundararajan and Keerthi's equations follow from multivariate 
+normal theory and make no use of the special
+form of $C$ for Gaussian process models and thus immediately generalize to the
+case of an arbitrary invertible covariance matrix $C$.
+-->
+
+<!--
+and expressing this same equation in terms of $g_i$ and $\bar{\sigma}_{ii}$, we
+obtain\footnote{ Note that \cite{vehtari2016} has a typo in the corresponding
+Equation (34).}:
+\begin{equation}
+  \log p(y_i \,|\, y_{-i},\theta)
+  = - \frac{1}{2}\log(2\pi)
+  + \frac{1}{2}\log \bar{\sigma}_{ii}
+  - \frac{1}{2}\frac{g_i^2}{\bar{\sigma}_{ii}}.
+\end{equation}
+-->
+
+## Non-factorizable student-t models
+
+The density of the $N$ dimensional multivariate student-t distribution 
+of vector $y$ is given by
+<!-- -->
+\begin{equation}
+\label{mvstudent}
+  p(y | \nu, \mu, \Sigma) = \frac{\Gamma((\nu + N) / 2)}{\Gamma(\nu / 2)}
+  \frac{1}{\sqrt{(\nu \pi)^N |\Sigma|}} 
+  \left(1 + \frac{1}{\nu} (y - \mu)^{\rm T} \Sigma^{-1} (y - \mu) \right)^{-(\nu + N)/2}
+\end{equation}
+<!-- -->
+with degrees of freedom $\nu$, location vector $\mu$
+and scale matrix $\Sigma$. Note that, $\mu$ is the mean of $y$ if $\nu > 1$ and
+$\frac{\nu}{\nu-2}\Sigma$ is the covariance matrix if $\nu > 2$.
+Similar to the multivariate normal case, the conditional distribution
+of the $i$th observation given all other observations $p(y_i | y_{-i}, \theta)$
+can be computed analytically.
+\begin{proposition}
+\label{prop-cond-student}
+If $y$ is multivariate student-t with degrees of freedom $\nu$, location vector
+$\mu$, and scale matrix $\Sigma$, then the conditional distribution of $y_i$
+given $y_{-i}$ for any observation $i$ is univariate student-t with parameters
+\begin{equation}
+\label{cnu}
+\tilde{\nu}_i = \nu + N - 1,
+\end{equation}
+\begin{equation}
+\label{cmeant}
+  \tilde{\mu}_{i} = \mu_i + \sigma_{i,-i} \Sigma^{-1}_{-i}(y_{-i} - \mu_{-i}),
+\end{equation}
+\begin{equation}
+\label{csdt}
+  \tilde{\sigma}_{i} = \frac{\nu + \beta_{-i}}{\nu + N - 1} 
+  \left( \sigma_{ii} + \sigma_{i,-i} \Sigma^{-1}_{-i} \sigma_{-i,i} \right),
+\end{equation}
+where 
+\begin{equation}
+\label{cbeta}
+\beta_{-i} = (y_{-i} - \mu_{-i})^{\rm T} \Sigma^{-1}_{-i} (y_{-i} - \mu_{-i}).
+\end{equation}
+\end{proposition}
+<!-- -->
+The proof based on results of @shah2014 is given in the Appendix.
+Note that $\tilde{\mu}_{i}$ is the same as in the normal case and $\tilde{\sigma}_{i}$
+is the same up to the correction factor $\frac{\nu + \beta_{-i}}{\nu + N - 1}$,
+which approaches $1$ for $\nu \rightarrow \infty$ as one would expect.
+Based on the above equations, we can compute the pointwise log-likelihood 
+values in the student-t case as
+<!-- -->
+\begin{align}
+\label{lp-student}
+  \log p(y_i \,|\, y_{-i},\theta)
+  &= \log (\Gamma((\tilde{\nu}_i + 1) / 2)) - \log (\Gamma(\tilde{\nu}_i / 2))
+- \frac{1}{2}\log(\tilde{\nu}_i \pi \tilde{\sigma}_{i} ) \nonumber \\
+&\quad - \frac{\tilde{\nu}_i + 1}{2} \log \left(1 + \frac{1}{\tilde{\nu}_i} \frac{(y_i-\tilde{\mu}_{i})^2}{\tilde{\sigma}_{i}} \right).
+\end{align}
+<!-- -->
+This approach has the same overall computational cost of $O(S N^{k+1})$ as 
+the non-optimized normal case and is therefore quite inefficient. 
+However, efficiency can again be improved.
+\begin{proposition}
+\label{prop-eff-student}
+If $y$ is multivariate student-t with degrees of freedom $\nu$, location vector
+$\mu$, and scale matrix $\Sigma$, then the conditional location and scale of $y_i$
+given $y_{-i}$ for any observation $i$ can be computed as
+\begin{equation}
+\label{cmeant2}
+  \tilde{\mu}_{i} = y_i - \frac{g_i}{\bar{\sigma}_{ii}},
+\end{equation}
+\begin{equation}
+\label{csdt2}
+  \tilde{\sigma}_{i} = 
+  \frac{\nu + \beta_{-i}}{\nu + N - 1} \frac{1}{\bar{\sigma}_{ii}},
+\end{equation}
+with
+\begin{equation}
+\label{cbeta2}
+  \beta_{-i} = (y_{-i} - \mu_{-i})^{\rm T} \left( \Sigma^{-1} - \frac{\bar{\sigma}_{-i,i} \bar{\sigma}_{-i,i}^{\rm T}}{\bar{\sigma}_{ii}} \right) (y_{-i} - \mu_{-i}),
+\end{equation}
+where $g_i = \left[\Sigma^{-1} (y - \mu)\right]_i$,
+$\bar{\sigma}_{ii} = \left[\Sigma^{-1}\right]_{ii}$, and 
+$\bar{\sigma}_{-i,i} = \left[\Sigma^{-1}\right]_{-i,i}$ is the $i$th column vector of $\Sigma^{-1}$ without the $i$th element. 
+\end{proposition}
+The proof is provided in the Appendix. Computing $\beta_{-i}$ for
+a single $i$ is an $O(N^2)$ operation, which needs to be repeated for each
+observation. So the cost of computing $\beta_{-i}$ for all observations is
+$O(N^3)$. The cost of inverting $\Sigma$ continues to be $O(N^k)$ and so the
+overall cost is dominated by $O(N^3)$, or $O(S N^3)$ if $\Sigma$ depends on the
+model parameters $\theta$ in a non-trivial manner. That is, in contrast to the
+normal case, we cannot reduce the computational costs below $O(S N^3)$ even
+if the model was parameterized directly in terms of $\Sigma^{-1} = \Sigma^{-1}(\theta)$ and thus avoided matrix inversion altogether.
+However, we are still substantially more efficient than the brute force
+approach, which requires $O(S N^{k+1}) > O(SN^3)$ operations.
+
+
+## Example: Lagged SAR models
+
+It often requires additional work to take a given multivariate or student-t
+model and express it in the form required to apply the equations for the
+predictive mean and standard deviation. Consider, for example, the lagged
+simultaneous autoregressive (SAR) model [@cressie1992; @haining2003], a spatial
+model with many applications in both the social sciences (e.g., economics) and
+natural sciences (e.g., ecology). The model is given by
+<!-- -->
+\begin{equation}
+y = \rho W y + \eta + \epsilon,
+\end{equation}
+<!-- -->
+or equivalently 
+<!-- -->
+\begin{equation}
+(I - \rho W) y = \eta + \epsilon,
+\end{equation}
+<!-- -->
+where $\rho$ is a scalar spatial correlation parameter and $W$ is a user-defined matrix of weights. 
+The matrix $W$ has entires $w_{ii} = 0$ along the diagonal and the off-diagonal entries $w_{ij}$
+are larger when units $i$ and $j$ are closer to each other but mostly zero as well. In a linear model, 
+the predictor term is $\eta = X \beta$, with design matrix $X$ and regression coefficients $\beta$,
+but the definition of the lagged SAR model holds for arbitrary $\eta$, so 
+these results are not restricted to the linear case.  
+
+If we have $\epsilon \sim \mathrm{N}(0, \sigma^2 I)$, with residual variance $\sigma^2$
+and identity matrix $I$ of dimension $N$, it follows that 
+<!-- -->
+\begin{equation}
+\label{lagsar}
+(I - \rho W) y \sim \mathrm{N}(\eta, \sigma^2 I),
+\end{equation}
+<!-- -->
+but this standard way of expressing the model is not compatible with
+the requirements of Proposition \ref{prop-eff-normal}. To make the lagged SAR model reconcilable with this proposition we need to rewrite it as follows (conditional on 
+$\rho$, $\eta$, and $\sigma^2$):
+<!-- -->
+\begin{equation}
+y \sim \mathrm{N}\left((I - \rho W)^{-1} \eta, \sigma^2 (I - \rho W)^{-1} (I - \rho W)^{-{\rm T}} \right),
+\end{equation}
+<!-- -->
+or more compactly, with $\widetilde{W} = (I - \rho W)$, 
+<!-- -->
+\begin{equation}
+y \sim \mathrm{N}\left(\widetilde{W}^{-1} \eta, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right).
+\end{equation}
+<!-- -->
+Written in this way, the lagged SAR model has the required form \eqref{mvnormal}.
+Accordingly, we can compute the leave-one-out
+predictive densities with Equations \eqref{cmean2} and \eqref{csd2}, replacing
+$\mu$ with $\widetilde{W}^{-1} \eta$ and taking the covariance matrix $\Sigma$ to
+be $\sigma^2 (\widetilde{W}^T \widetilde{W})^{-1}$. This implies
+$\Sigma^{-1}=\sigma^{-2}\widetilde{W} \widetilde{W}^T$ and so that the overall
+computational cost is dominated by $\widetilde{W}^{-1} \eta$. In SAR models, $W$
+is usally sparse and so is $\widetilde{W}$. Thus, if sparse matrix operations
+are used, then the computational cost for $\Sigma^{-1}$ will be less than $O(N^2)$
+and for $\widetilde{W}^{-1}$ it will be less than $O(N^3)$ depending on number
+of non-zeros and the fill pattern. Since $\widetilde{W}$ depends on the parameter
+$\rho$ in a non-trivial manner, $\widetilde{W}^{-1}$ needs to be computed for
+each posterior draw, which implies an overall computational cost of less than
+$O(S N^3)$. 
+
+If the errors are student-t distributed, we can apply analogous transformations as above to arrive at the student-t distribution for the responses
+<!-- -->
+\begin{equation}
+y \sim \mathrm{t}\left(\nu, \widetilde{W}^{-1} \eta, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right),
+\end{equation}
+with computational cost dominated by the computation of the $\beta_i$
+from Equation \eqref{cbeta2} which is in $O(S N^3)$.
+
+
+# Approximate LOO-CV for non-factorizable models {#approx-loo-cv}
+
+Exact LOO-CV, requires refitting the model $N$ 
+times, each time leaving out one observation. Alternatively, it is possible to
+obtain an \emph{approximate} LOO-CV using only a single model fit by instead calculating
+the pointwise log-predictive density \eqref{loo-pd}, 
+without leaving out any observations, and then applying an
+importance sampling correction [@gelfand1992], for example, using
+Pareto smoothed importance sampling [PSIS; @vehtari2017loo].
+
+The conditional pointwise log-likelihood matrix of dimension $S \times N$ is the
+only required input to the approximate LOO-CV algorithm from @vehtari2017loo and
+thus the equations provided in Section \ref{pwnf} allow for approximate LOO-CV
+for \emph{any} model that can be expressed conditionally in terms of a
+multivariate or student-t model with invertible covariance/scale matrix
+$\Sigma$; including those where the likelihood does not factorize.
+
+Suppose we have obtained $S$ posterior draws $\theta^{(s)}$ $(s=1,\ldots,S)$, from the
+\emph{full} posterior $p(\theta\,|\, y)$ using MCMC or another sampling algorithm.
+Then, the pointwise log-predictive density \eqref{loo-pd} can be approximated
+as:
+<!-- -->
+\begin{equation}
+ p(y_i\,|\, y_{-i}) \approx
+   \frac{ \sum_{s=1}^S p(y_i\,|\,y_{-i},\,\theta^{(s)}) \,w_i^{(s)}}{ \sum_{s=1}^S w_i^{(s)}},
+\end{equation}
+<!-- -->
+where $w_i^{(s)}$ are importance weights to be computed 
+in two steps. First, we obtain the raw importance ratios
+<!-- -->
+\begin{equation}
+  r_i^{(s)} \propto \frac{1}{p(y_i \,|\, y_{-i}, \, \theta^{(s)})},
+\end{equation}
+<!-- -->
+and then stabilize them using Pareto-smoothed importance-sampling to
+obtain the weights $w_i^{(s)}$ [@vehtari2017loo; @vehtari2017psis]. The
+resulting approximation is referred to as PSIS-LOO-CV [@vehtari2017loo].
+
+For Bayesian models fit using MCMC, the whole procedure of evaluating
+and comparing model fit via PSIS-LOO-CV can be summarized as follows:
+
+\begin{enumerate}
+\item Fit the model using MCMC obtaining $S$ samples from the posterior
+distribution of the parameters $\theta$.
+\item For each of the $S$ draws of $\theta$, compute the pointwise
+log-likelihood value for each of the $N$ observations in $y$ 
+as described in Section \ref{pwnf}. The results can be stored in an $S \times N$ matrix.
+\item Run the PSIS algorithm from \cite{vehtari2017loo} on the $S \times N$
+matrix obtained in step 2 to obtain a PSIS-LOO-CV estimate.
+For convenience, the \texttt{loo} R package
+\citep{loo2018} provides this functionality.
+\item Repeat the steps 1 to 3 for each model under consideration and
+perform model comparison based on the obtained PSIS-LOO-CV estimates.
+\end{enumerate}
+
+In the Section \ref{case-study}, we demonstrate this method by performing
+approximate LOO-CV for lagged SAR models fit to spatially correlated 
+crime data.
+
+## Validation using exact LOO-CV {#exact-loo-cv}
+
+In order to validate the approximate LOO-CV procedure, and also in order to
+allow exact computations to be made for a small number of leave-one-out folds
+for which the Pareto-$k$ diagnostic [@vehtari2017psis] indicates an
+unstable approximation, we need to consider how we might do \emph{exact}
+LOO-CV for a non-factorizable model. Here we will provide the necessary
+equations and in the supplementary materials we provide code for comparing the
+exact and approximate versions.
+
+In the case of those multivariate normal or student-t models that have the marginalization property, exact
+LOO-CV is relatively straightforward: when refitting the model we can simply 
+drop the one row and column of the covariance matrix $\Sigma$ corresponding to the 
+held out observation without altering the prior of the other observations. 
+But this does not hold in general for all multivariate normal or student-t models
+(in particular it does not hold for SAR models). 
+Instead, in order to keep the original prior, we may need to maintain the full
+covariance matrix $\Sigma$ even when one of the observations is left out.
+
+The general solution is to model $y_i$ as a missing observation and estimate it
+along with all of the model parameters. For a multivariate normal model
+$\log p(y_i\,|\,y_{-i})$ can be computed as follows. First, we model $y_i$ as
+missing and denote the corresponding *parameter* $y_i^{\mathrm{mis}}$. Then, we
+define
+<!-- -->
+\begin{equation}
+y_{\mathrm{mis}(i)} = (y_1, \ldots, y_{i-1}, y_i^{\mathrm{mis}}, y_{i+1}, \ldots, y_N).
+\end{equation}
+<!-- -->
+to be the same as the full set of observations $y$ but replacing $y_i$ with
+the parameter $y_i^{\mathrm{mis}}$.
+Second, we compute the log predictive densities as in Equations \eqref{lp-normal} 
+and \eqref{lp-student}, but replacing $y$ with
+$y_{\mathrm{mis}(i)}$ in all computations.
+Finally, the leave-one-out predictive distribution can be estimated as
+<!-- -->
+\begin{equation}
+ p(y_i\,|\,y_{-i}) \approx \frac{1}{S} \sum_{s=1}^S p(y_i\,|\,y_{-i}, \theta_{-i}^{(s)}),
+\end{equation}
+<!-- -->
+where $\theta_{-i}^{(s)}$ are draws from the posterior distribution
+$p(\theta\,|\,y_{\mathrm{mis}(i)})$.
+
+
+# Case Study: Neighborhood Crime in Columbus, Ohio {#case-study}
+
+```{r, cache=FALSE}
+SEED <- 10001 
+set.seed(SEED) # only sets seed for R (seed for Stan set later)
+# loads COL.OLD data frame and COL.nb neighbor list
+data(oldcol, package = "spdep") 
+```
+
+In order to demonstrate how to carry out the computations implied by
+these equations, we will fit and evaluate lagged SAR models to data on crime
+in 49 different neighborhoods of Columbus, Ohio during the year 1980.
+The data was originally described in [@anselin1988] and ships with the
+spdep R package [@bivand2015].
+The three variables in the data set relevant to this example are:
+\texttt{CRIME}: the number of residential burglaries and vehicle thefts per
+thousand households in the neighborhood, \texttt{HOVAL}: housing value in units
+of \$1000 USD, and \texttt{INC}: household income in units of \$1000 USD. In
+addition, we have information about the spatial relationship of neighborhoods
+from which we can construct the weight matrix to help account for the spatial
+dependency among the observations. In addition to the loo R package [@loo2018],
+for this analysis we use the brms interface [@brms1;@brms2] to Stan
+[@carpenter2017] to generate a Stan program and fit the model. The complete R
+code for this case study can be found in the supplemental materials.
+
+<!--
+A normal lagged SAR model predicting `CRIME` from `INC` and `HOVAL`
+can be specified with brms as follows:
+
+```{r, eval=FALSE}
+# should we make this visible?
+fit_sar_normal <- brm(
+  formula = CRIME ~ INC + HOVAL + sar(COL.nb), 
+  family = gaussian(),
+  data = COL.OLD,
+  data2 = list(COL.nb = COL.nb)
+)
+```
+-->
+
+```{r fit_sar_normal, results="hide"}
+fit_sar_normal <- brm(
+  CRIME ~ INC + HOVAL + sar(COL.nb),
+  family = gaussian(),
+  data = COL.OLD, 
+  data2 = list(COL.nb = COL.nb),
+  seed = SEED,
+  file = "models/fit_sar_normal"
+)
+```
+
+We fit a normal SAR model first using the weakly-informative default priors
+of brms. In Figure \@ref(fig:plots-normal) (a), we see that
+both higher income and higher housing value predict lower crime rates in the
+neighborhood. Moreover, there seems to be substantial spatial correlation
+between adjacent neighborhoods, as indicated by the posterior distribution of
+the \texttt{lagsar} parameter.
+
+```{r plot-lagsar-normal, fig.cap="Posterior distribution of selected parameters of the lagged SAR model along with posterior median and 50% central interval.", fig.width=10, fig.asp=0.4}
+ps_normal <- as.data.frame(fit_sar_normal) %>%
+  select(b_Intercept, b_INC, b_HOVAL, lagsar, sigma) %>%
+  rename(
+    "Intercept coefficient" = b_Intercept,
+    "Coefficient of INC" = b_INC,
+    "Coefficient of HOVAL" = b_HOVAL,
+    "Lagged SAR autocorrelation" = lagsar,
+    "Residual standard deviation" = sigma
+  ) %>%
+  gather("parameter", "value")
+
+line_normal <- ps_normal %>%
+  group_by(parameter) %>%
+  summarise(
+    lower = quantile(value, 0.25),
+    upper = quantile(value, 0.75)
+  ) %>%
+  gather("key", "value", lower:upper)
+
+plot_ps_normal <- ps_normal %>%
+  ggplot(aes(value)) +
+  geom_histogram(
+    fill = color_scheme_get(scheme = "brightblue")$mid,
+    color = color_scheme_get(scheme = "brightblue")$mid_highlight, 
+    size = 0.25
+  ) +
+  geom_vline(
+    aes(xintercept = value),
+    linetype = 2, size = 1,
+    data = line_normal
+  ) +
+  facet_wrap("parameter", scales = "free") +
+  labs(x = "", y = "") +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  ggtitle("a")
+```
+
+In order to evaluate model fit, the next step is to compute the pointwise
+log-likelihood values needed for approximate LOO-CV and we apply the
+method laid out in Section \ref{approx-loo-cv}. Since this is already implemented in
+brms[^source], we can simply use the built-in `loo` method on the fitted model to obtain the desired results.
+The quality of the approximation can be investigated graphically by plotting the Pareto-$k$ diagnostic for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:plots-normal) (b), we see that the fourth observation is problematic.
+This has two implications. First, it may reduce the accuracy of the LOO-CV approximation.
+Second it indicates that the fourth observation is highly influential for the 
+posterior and thus questions the robustness of the inference obtained by means
+of this model. We will address the former issue first and come back to the
+latter issue afterwards.
+
+[^source]: Source code is available at
+\url{https://github.com/paul-buerkner/brms/blob/master/R/log_lik.R}.
+
+```{r}
+loo_sar_normal <- loo(fit_sar_normal)
+```
+
+```{r psis-res-nb, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation.", fig.width=10, fig.asp=0.5}
+plot_ks_normal <- plot_ks(loo_sar_normal) +
+  ggtitle("b")
+# plot(loo_sar_normal, label_points = TRUE, main = "")
+```
+
+The PSIS-LOO-CV approximation of the expected log predictive density for new
+data reveals $\text{elpd}_{\text{approx}} =$  `r loo_sar_normal$estimates[1, 1]`.
+To verify the correctness of our approximate estimates, this result still needs to be
+validated against exact LOO-CV, which is somewhat more involved, as we need to
+re-fit the model $N$ times each time leaving out a single observation. For the
+lagged SAR model, we cannot just ignore the held-out observation entirely as
+this will change the prior distribution. In other words, the lagged SAR model
+does not have the marginalization property that holds, for instance, for
+Gaussian process models. Instead, we have to model the held-out observation as a
+missing value, which is to be estimated along with the other model parameters
+(see the supplemental material for details on the R code).
+
+```{r exact-loo-cv-normal, results="hide", message=FALSE, warning=FALSE, cache = TRUE}
+path <- "results/exact_loo_normal.rds"
+if (file.exists(path)) {
+  # avoid repeated computations of 'pp' and 'll'
+  tmp <- read_rds(path)
+  pp_normal <- tmp$pp
+  ll_normal <- tmp$ll
+  rm(tmp)
+} else {
+  # see help("mi", "brms") for details on the mi() usage
+  fit_sar_normal_dummy <- brm(
+    CRIME | mi() ~ INC + HOVAL + sar(COL.nb),
+    family = gaussian(),
+    data = COL.OLD, 
+    data2 = list(COL.nb = COL.nb),
+    seed = SEED,
+    file = "models/fit_sar_normal_dummy",
+    chains = 0
+  )
+  N <- nrow(COL.OLD)
+  S <- 2000
+  pp_normal <- vector("list", N)
+  ll_normal <- matrix(nrow = S, ncol = N)
+  for (i in seq_len(N)) {
+    dat_mi <- COL.OLD
+    dat_mi$CRIME[i] <- NA
+    fit_i <- update(fit_sar_normal_dummy, newdata = dat_mi, 
+                    iter = S * 2, chains = 1)
+    posterior <- as.data.frame(fit_i)
+    eta <- pp_expect(fit_i, dpar = "mu")
+    sdata <- standata(fit_sar_normal_dummy)
+    yloo <- sdloo <- rep(NA, S)
+    for (s in seq_len(S)) {
+      p <- posterior[s, ]
+      y_miss_i <- sdata$Y
+      y_miss_i[i] <- p$Ymi
+      W_tilde <- diag(N) - p$lagsar * sdata$Msar
+      Cinv <- t(W_tilde) %*% W_tilde / p$sigma^2
+      e <- y_miss_i - solve(W_tilde, eta[s, ])
+      g <- Cinv %*% e
+      cbar <- diag(Cinv)
+      yloo[s] <- y_miss_i[i] - g[i] / cbar[i]
+      sdloo[s] <- sqrt(1 / cbar[i])
+      ll_normal[s, i] <- dnorm(sdata$Y[i], yloo[s], sdloo[s], log = TRUE)
+    }
+    ypred <- rnorm(S, yloo, sdloo)
+    pp_normal[[i]] <- data.frame(y = c(posterior$Ymi, ypred))
+    pp_normal[[i]]$type <- rep(c("pp", "loo"), each = S)
+    pp_normal[[i]]$obs <- i
+  }
+  pp_normal <- do.call(rbind, pp_normal) 
+  write_rds(list(pp = pp_normal, ll = ll_normal), path)
+}
+```
+
+A first step in the validation of the pointwise predictive density is to compare
+the distribution of the implied response values for the left-out observation
+using the pointwise mean and standard deviation from (see Proposition
+\ref{prop-eff-normal}) to the distribution of the $y_i^{\mathrm{mis}}$
+posterior-predictive values estimated as part of the model. If the pointwise
+predictive density is correct, the two distributions should match very closely
+(up to sampling error). In Figure \@ref(fig:plots-normal) (c), we overlay these two
+distributions for the first four observations and see that they match very
+closely (as is the case for all $49$ observations in this example).
+
+```{r yplots-normal, cache = FALSE, fig.width=10, out.width="95%", fig.asp = 0.3, fig.cap="Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp')."}
+pp_normal_sub <- pp_normal[pp_normal$obs %in% 1:4, ]
+plot_ypred_normal <- ggplot(pp_normal_sub, aes(y, fill = type)) +
+  facet_wrap("obs", scales = "fixed", ncol = 4) +
+  geom_density(alpha = 0.6) +
+  labs(y = "") +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  ggtitle("c")
+```
+
+```{r loo_exact, cache=FALSE}
+log_mean_exp <- function(x) {
+  # more stable than log(mean(exp(x)))
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x))) - log(length(x))
+}
+
+exact_elpds_normal <- apply(ll_normal, 2, log_mean_exp)
+exact_elpd_normal <- sum(exact_elpds_normal)
+```
+
+In the final step, we compute the pointwise predictive density based on the
+exact LOO-CV and compare it to the approximate PSIS-LOO-CV result computed
+earlier. The results of the approximate ($\text{elpd}_{\text{approx}} =$ 
+`r loo_sar_normal$estimates[1, 1]`) and exact LOO-CV ($\text{elpd}_{\text{exact}} =$ `r exact_elpd_normal`)
+are similar but not as close as we would expect if there were no
+problematic observations. We can investigate this issue more closely by plotting
+the approximate against the exact pointwise ELPD values.
+In Figure \@ref(fig:plots-normal) (d), the fourth data point -- the observation
+flagged as problematic by the PSIS-LOO approximation -- is colored in red and is
+the clear outlier. Otherwise, the correspondence between the exact and
+approximate values is strong. In fact, summing over the pointwise ELPD values
+and leaving out the fourth observation yields practically equivalent results for
+approximate and exact LOO-CV ($\text{elpd}_{\text{approx},-4} =$ 
+`r sum(loo_sar_normal$pointwise[-4, "elpd_loo"])` vs.
+$\text{elpd}_{\text{exact},-4} =$ `r sum(exact_elpds_normal[-4])`). 
+From this we can conclude that the difference we
+found when including *all* observations does not indicate an error in the
+implementation of the approximate LOO-CV but rather a violation of its
+assumptions. 
+
+```{r elpd-compare-normal, fig.cap = "Comparison of approximate and exact pointwise elpd values for the SAR model. Problematic observations are marked as red dots.", fig.height=2.5, fig.width=5}
+df_normal <- data.frame(
+  approx_elpd = loo_sar_normal$pointwise[, "elpd_loo"],
+  exact_elpd = exact_elpds_normal
+)
+plot_elpd_normal <- ggplot(df_normal, aes(x = approx_elpd, y = exact_elpd)) +
+  geom_abline(color = "gray30") +
+  geom_point(size = 2) +
+  geom_point(data = df_normal[4, ], size = 3, color = "red3") +
+  xlab("Approximate elpds") +
+  ylab("Exact elpds") +
+  ylim(c(-16, -3)) +
+  ggtitle("d")
+```
+
+```{r plots-normal, message = FALSE, fig.height=7.8, cache=FALSE, fig.cap="Results of the normal SAR model. 1) Posterior distribution of selected parameters of the lagged SAR model along with posterior median and 50% central interval. 2) PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation. 3) Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp'). 4) Comparison of approximate and exact pointwise elpd values. Problematic observations are marked as red dots."}
+grid.arrange(
+  plot_ps_normal, 
+  plot_ks_normal,
+  plot_ypred_normal,
+  plot_elpd_normal,
+  nrow = 4,
+  heights = c(1.6, 1, 1, 1)
+)
+```
+
+```{r}
+# select problematic observations
+obs <- which(loo_sar_normal$diagnostics$pareto_k > 0.7)
+elpd_loo <- exact_elpds_normal[obs]
+# compute \hat{lpd}_j for each of the held out observations (using log-lik
+# matrix from full posterior, not the leave-one-out posteriors)
+ll_x <- log_lik(fit_sar_normal)[, obs, drop = FALSE]
+hat_lpd <- apply(ll_x, 2, log_mean_exp)
+# compute effective number of parameters
+p_loo <- hat_lpd - elpd_loo
+# replace parts of the loo object with these computed quantities
+sel <- c("elpd_loo", "p_loo", "looic")
+loo_sar_normal_refit <- loo_sar_normal
+loo_sar_normal_refit$pointwise[obs, sel] <- 
+  cbind(elpd_loo, p_loo, -2 * elpd_loo)
+new_pw <- loo_sar_normal_refit$pointwise[, sel, drop = FALSE]
+loo_sar_normal_refit$estimates[, 1] <- colSums(new_pw)
+loo_sar_normal_refit$estimates[, 2] <- 
+  sqrt(nrow(loo_sar_normal_refit$pointwise) * apply(new_pw, 2, var))
+# what should we do about pareto-k? for now setting them to 0
+loo_sar_normal_refit$diagnostics$pareto_k[obs] <- 0
+```
+
+With the correctness of the approximating procedure established for
+non-problematic observations, we can now go ahead and correct for the problematic
+observation in the approximate LOO-CV estimate. @vehtari2017loo recommend to
+perform exact LOO-CV only for the problematic observations and replace their
+approximate ELPD contributions with their exact counterparts [see also 
+@paananen2019 for an alternative method]. So this time, we do not use exact LOO-CV for validation of
+the approximation but rather to improve the latter's accuracy when needed. In
+the present normal SAR model, only the 4th observation was diagnosed as
+problematic and so we only need to update the ELPD contribution of this
+observation. The results of the corrected approximate
+($\text{elpd}_{\text{approx}} =$  `r loo_sar_normal_refit$estimates[1, 1]`) and
+exact LOO-CV ($\text{elpd}_{\text{exact}} =$ `r exact_elpd_normal`) are now
+almost equal for the complete data set as well.
+
+Although we were able to correct for the problematic observation in the
+approximate LOO-CV estimation, the mere existance of such problematic
+observations raises doubts about the appropriateness of the normal SAR model for
+the present data. In particular, since normal models are easily influenced by
+outliers, we should be worried about the robustness of the parameter estimates
+in the light of the outlying data point. Accordingly, it is sensible to fit a
+student-t SAR model as a potentially better predicting and more robust
+alternative. We choose an informative ${\rm Gamma}(4, 0.5)$ prior (with mean $8$
+and standard deviation $4$) on the degrees of freedom parameter $\nu$ to ensure
+rather fat tails of the likelihood and thus greater robustness against outliers.
+For all other parameters, we continue to use the weakly-informative default
+priors of brms. In Figure \@ref(fig:plots-student) (a), the marginal posterior
+distributions of the main model parameters are depicted. Comparing the results
+to those shown in Figure \@ref(fig:plots-normal) (a), we see that the
+estimates of both the regression parameters and the SAR autocorrelation are
+quite similar to the estimates obtained from the normal model.
+
+<!--
+```{r, eval=FALSE}
+# should we make this visible?
+fit_sar_student <- brm(
+  formula = CRIME ~ INC + HOVAL + sar(COL.nb), 
+  family = student(),
+  data = COL.OLD,
+  data2 = list(COL.nb = COL.nb),
+  prior = prior(gamma(4, 0.5), class = "nu")
+)
+```
+-->
+
+```{r fit_sar_student, results="hide"}
+fit_sar_student <- brm(
+  CRIME ~ INC + HOVAL + sar(COL.nb),
+  family = student(),
+  data = COL.OLD, 
+  data2 = list(COL.nb = COL.nb),
+  prior = prior(gamma(4, 0.5), class = "nu"),
+  seed = SEED,
+  file = "models/fit_sar_student"
+)
+```
+
+```{r plot-lagsar-student, fig.cap="Posterior distribution of selected parameters of the student-t lagged SAR model along with posterior median and 50% central interval.", fig.width=10, fig.asp=0.4}
+ps_student <- as.data.frame(fit_sar_student) %>%
+  select(b_Intercept, b_INC, b_HOVAL, lagsar, sigma, nu) %>%
+  rename(
+    "Intercept coefficient" = b_Intercept,
+    "Coefficient of INC" = b_INC,
+    "Coefficient of HOVAL" = b_HOVAL,
+    "Lagged SAR autocorrelation" = lagsar,
+    "Residual standard deviation" = sigma,
+    "Residual degrees of freedom" = nu
+  ) %>%
+  gather("parameter", "value") 
+
+line_student <- ps_student %>%
+  group_by(parameter) %>%
+  summarise(
+    lower = quantile(value, 0.25),
+    upper = quantile(value, 0.75)
+  ) %>%
+  gather("key", "value", lower:upper)
+
+plot_ps_student <- ps_student %>%
+  ggplot(aes(value)) +
+  geom_histogram(
+    fill = color_scheme_get(scheme = "brightblue")$mid,
+    color = color_scheme_get(scheme = "brightblue")$mid_highlight, 
+    size = 0.25
+  ) +
+  geom_vline(
+    aes(xintercept = value),
+    linetype = 2, size = 1,
+    data = line_student
+  ) +
+  facet_wrap("parameter", scales = "free") +
+  labs(x = "", y = "") +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  ggtitle("a")
+```
+
+```{r}
+loo_sar_student <- loo(fit_sar_student)
+```
+
+```{r psis-student, cache = FALSE, fig.cap="PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation.", fig.width=10, fig.asp=0.5}
+plot_ks_student <- plot_ks(loo_sar_student) +
+  ggtitle("b")
+# plot(loo_sar_student, label_points = TRUE, main = "")
+```
+
+```{r}
+# multiplicate factor for conditional student-t models
+# @param nu degrees of freedom parameter
+# @param Cinv inverse of the full matrix
+# @param e vector of error terms, that is, y - mu
+student_t_cov_factor <- function(i, nu, Cinv, e) {
+  beta1 <- student_t_beta1(i, Cinv, e)
+  (nu + beta1) / (nu + nrow(Cinv) - 1)
+}
+
+# beta1 in equation (XXX) 
+# @param i observation index to exclude in the submatrix
+# @param Cinv inverse of the full matrix
+# @param e vector of error terms, that is, y - mu
+# @param vector of length one
+student_t_beta1 <- function(i, Cinv, e) {
+  sub_Cinv_i <- sub_inverse_symmetric(Cinv, i)
+  t(e[-i]) %*% sub_Cinv_i %*% e[-i]
+}
+
+# efficient submatrix inverse for a symmetric matrix
+# @param Cinv inverse of the full matrix
+# @param i observation index to exclude in the submatrix
+# @return inverse of the submatrix after removing observation i
+sub_inverse_symmetric <- function(Cinv, i) {
+  csub <- Cinv[i, -i]
+  D <- outer(csub, csub)
+  Cinv[-i, -i] - D / Cinv[i, i]
+}
+```
+
+```{r exact-loo-cv-student, results="hide", message=FALSE, warning=FALSE, cache = TRUE}
+path <- "results/exact_loo_student.rds"
+if (file.exists(path)) {
+  # avoid repeated computations of 'pp' and 'll_normal'
+  tmp <- read_rds(path)
+  pp_student <- tmp$pp
+  ll_student <- tmp$ll
+  rm(tmp)
+} else {
+  # see help("mi", "brms") for details on the mi() usage
+  fit_sar_student_dummy <- brm(
+    CRIME | mi() ~ INC + HOVAL + sar(COL.nb),
+    family = student(),
+    data = COL.OLD, 
+    data2 = list(COL.nb = COL.nb),
+    prior = prior(gamma(4, 0.5), class = "nu"),
+    seed = SEED,
+    file = "models/fit_sar_student_dummy",
+    chains = 0
+  )
+  N <- nrow(COL.OLD)
+  S <- 2000
+  pp_student <- vector("list", N)
+  ll_student <- matrix(nrow = S, ncol = N)
+  for (i in seq_len(N)) {
+    dat_mi <- COL.OLD
+    dat_mi$CRIME[i] <- NA
+    fit_i <- update(fit_sar_student_dummy, newdata = dat_mi, 
+                    iter = S * 2, chains = 1)
+    posterior <- as.data.frame(fit_i)
+    eta <- pp_expect(fit_i, dpar = "mu")
+    sdata <- standata(fit_sar_student_dummy)
+    yloo <- sdloo <- dfloo <- rep(NA, S)
+    for (s in seq_len(S)) {
+      p <- posterior[s, ]
+      y_miss_i <- sdata$Y
+      y_miss_i[i] <- p$Ymi
+      W_tilde <- diag(N) - p$lagsar * sdata$Msar
+      Cinv <- t(W_tilde) %*% W_tilde / p$sigma^2
+      e <- y_miss_i - solve(W_tilde, eta[s, ])
+      g <- Cinv %*% e
+      cbar <- diag(Cinv)
+      yloo[s] <- y_miss_i[i] - g[i] / cbar[i]
+      sdloo[s] <- sqrt(1 / cbar[i] * student_t_cov_factor(i, p$nu, Cinv, e))
+      dfloo[s] <- p$nu + nrow(Cinv) - 1
+      ll_student[s, i] <- dstudent_t(sdata$Y[i], dfloo[s], yloo[s], sdloo[s], log = TRUE)
+    }
+    ypred <- rnorm(S, yloo, sdloo)
+    pp_student[[i]] <- data.frame(y = c(posterior$Ymi, ypred))
+    pp_student[[i]]$type <- rep(c("pp", "loo"), each = S)
+    pp_student[[i]]$obs <- i
+  }
+  pp_student <- do.call(rbind, pp_student) 
+  write_rds(list(pp = pp_student, ll = ll_student), path)
+}
+```
+
+```{r ypred-student, cache = FALSE, fig.width=10, out.width="95%", fig.asp = 0.3, fig.cap="Implied response values of the first four observations computed (a) after model fitting (type = 'loo') and (b) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp')."}
+pp_student_sub <- pp_student[pp_student$obs %in% 1:4, ]
+plot_ypred_student <- ggplot(pp_student_sub, aes(y, fill = type)) +
+  geom_density(alpha = 0.6) +
+  facet_wrap("obs", scales = "fixed", ncol = 4) +
+  labs(y = "") +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  ) +
+  ggtitle("c")
+```
+
+```{r loo_exact_student, cache=FALSE}
+exact_elpds_student <- apply(ll_student, 2, log_mean_exp)
+exact_elpd_student <- sum(exact_elpds_student)
+```
+
+```{r elpd-compare-student, fig.cap = "Comparison of approximate and exact pointwise elpd values for the student-t SAR model. There were no problematic observations for this model.", fig.height=2.5, fig.width=5}
+df_student <- data.frame(
+  approx_elpd = loo_sar_student$pointwise[, "elpd_loo"],
+  exact_elpd = exact_elpds_student
+)
+plot_elpd_student <- ggplot(df_student, aes(x = approx_elpd, y = exact_elpd)) +
+  geom_abline(color = "gray30") +
+  geom_point(size = 2) +
+  xlab("Approximate elpds") +
+  ylab("Exact elpds") +
+  ggtitle("d")
+```
+
+```{r plots-student, message = FALSE, fig.height=7.8, cache=FALSE, fig.cap="Results of the student-t SAR model. a) Posterior distribution of selected parameters of the lagged SAR model along with posterior median and 50% central interval. b) PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation. c) Implied response values of the first four observations computed (1) after model fitting (type = 'loo') and (2) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp'). d) Comparison of approximate and exact pointwise elpd values. There were no problematic observations for this model."}
+grid.arrange(
+  plot_ps_student, 
+  plot_ks_student,
+  plot_ypred_student,
+  plot_elpd_student,
+  nrow = 4,
+  heights = c(1.6, 1, 1, 1)
+)
+```
+
+In contrast to the normal case, we see in Figure \@ref(fig:plots-student) (b) that the 4th observation is no longer recognized as problematic by the Pareto-$k$ diagnostics.
+It does exceed $0.5$ slightly but does not exceed the more important threshold
+of $0.7$ above which we would stop trusing the PSIS-LOO-CV approximation.
+Indeed, comparison between the approximate ($\text{elpd}_{\text{approx}} =$ 
+`r loo_sar_student$estimates[1, 1]`) and exact LOO-CV 
+($\text{elpd}_{\text{exact}} =$ `r exact_elpd_student`) based on the complete
+data demonstrates that they are very similar (up to random error due to the MCMC
+estimation). The results showns in Figure \@ref(fig:plots-student) (c) and (d)
+provide further evidence for both, the correctness of our (exact and
+approximate) LOO-CV methods for non-factorizable student-t models and for the
+goodness of the PSIS-LOO-CV approximation for the present student-t SAR model.
+
+```{r}
+looc <- loo_compare(loo_sar_normal_refit, loo_sar_student)
+```
+
+Lastly, let us compare the PSIS-LOO-CV estimate of the normal SAR model (after
+correcting for the problematic observation via refit) to the student-t SAR
+model. The ELPD difference between the two models is `r looc[2, "elpd_diff"]`
+(SE = `r looc[2, "se_diff"]`) in favor of the student-t model, and thus very
+small and not substantial for any practical purposes. As shown in Figure
+\@ref(fig:elpd-approx-compare), the pointwise elpd contributions are also highly
+similar. Only for the 4th observation, the student-t model fits slightly but
+noticably better.
+
+```{r elpd-approx-compare, fig.cap = "Comparison of approximate pointwise elpd values for the normal SAR model (after refit for the 4th observation) and the student-t SAR model (without refit). Observations with relevant differences are highlighted in red.", fig.height=2.5}
+df_compare <- data.frame(
+  approx_elpd_normal = loo_sar_normal_refit$pointwise[, "elpd_loo"],
+  approx_elpd_student = loo_sar_student$pointwise[, "elpd_loo"]
+)
+
+ggplot(df_compare, aes(x = approx_elpd_normal, y = approx_elpd_student)) +
+  geom_abline(color = "gray30") +
+  geom_point(size = 2) +
+  geom_point(data = df_compare[4, ], size = 3, color = "red3") +
+  xlab("Approximate normal elpds") +
+  ylab("Approximate student-t elpds") +
+  xlim(c(-16, -3)) +
+  ylim(c(-16, -3)) 
+```
+
+
+# Conclusion
+
+In the present paper, we have derived how to perform and validate exact and
+approximate leave-one-out cross-validation (LOO-CV) for non-factorizable
+multivariate normal and student-t models; models which are highly relevant to
+temporal and spatial statistics. The developed LOO-CV approximations make model
+fit evaluation and comparison feasible, efficient, and robust. We thus expect them
+to fine widespread application. The primary motivation for
+this paper is to enable approximate LOO-CV for models that cannot be factorized
+at all, but our approach also works for *any* Bayesian model that can be
+expressed in terms of a multivariate normal or student-t likelihood. Therefore
+it may also be useful for models that are factorizable but for which the
+factorized representation is difficult to compute or not available to the
+researcher for some other reason.
+
+# Acknowledgements
+
+We thank Daniel Simpson for useful discussion and the Academy of Finland
+(grants 298742, 313122) for partial support of this work.
+
+<br />
+
+# Appendix {-}
+
+<br />
+
+*Proof* of Proposition \ref{prop-eff-normal}. 
+In their Lemma 1, @sundararajan2001 proof for any finite subset $z$ of a 
+zero-mean Gaussian process with covariance matrix $\Sigma$ that the LOO predictive
+mean and standard deviation can be computed as
+<!-- -->
+\begin{equation}
+  \tilde{\mu}_{i} = z_i - \frac{g_i}{\bar{\sigma}_{ii}},
+\end{equation}
+\begin{equation}
+  \tilde{\sigma}_{i} = \frac{1}{\bar{\sigma}_{ii}},
+\end{equation}
+<!-- -->
+where $g_i = \left[\Sigma^{-1} z\right]_i$ and $\bar{\sigma}_{ii} =
+\left[\Sigma^{-1}\right]_{ii}$. Their proof does not make use of any specific
+form of $\Sigma$ and thus directly applies to all zero-mean multivariate normal
+distributions. If $y$ is multivariate normal with mean $\mu$ then $(y - \mu)$ is
+multivariate normal with mean $0$ and unchanged covariance matrix. 
+Thus, we can replace $z$ with $(y - \mu)$ in
+the above equations. By the same argument we see that, if $(y_i - \mu_i)$ has LOO
+mean $(y_i - \mu_i) - \frac{g_i}{\bar{\sigma}_{ii}}$, then $y$ has LOO mean $y_i
+- \frac{g_i}{\bar{\sigma}_{ii}}$ which completes the proof. \hfill $\Box$
+
+*Proof* of Proposition \ref{prop-cond-student}. 
+Using the parametrization $K := {\rm Cov}(y) = \frac{\nu}{\nu - 2} \Sigma$ and
+requiring $\nu > 2$, @shah2014 proof in their Lemma 3 that, if $y = (y_1, y_2)$
+is multivariate student-t of dimension $N = N_1 + N_2$, then $y_2$ given $y_1$
+is multivaratiate student-t of dimension $N_2$. Moreover, they provide equations
+for the parameters of the conditional student-t distribution. When we
+parameterize for $\Sigma$ instead of $K$ and allow for $\nu > 0$, we can repeat
+their proof analogously which yields the following parameters of the conditional
+student-t distribution of $y_2$ given $y_1$:
+\begin{equation}
+\tilde{\nu}_2 = \nu + N_1,
+\end{equation}
+\begin{equation}
+  \tilde{\mu}_{2} = \mu_2 + \Sigma_{2,1} \Sigma^{-1}_{1}(y_1 - \mu_{1}),
+\end{equation}
+\begin{equation}
+  \tilde{\sigma}_{2} = \frac{\nu + \beta_{1}}{\nu + N_1} 
+  \left( \Sigma_{22} + \Sigma_{2,1} \Sigma^{-1}_{1} \Sigma_{1,2} \right),
+\end{equation}
+with
+\begin{equation}
+\beta_{1} = (y_{1} - \mu_{1})^{\rm T} \Sigma^{-1}_{1} (y_{1} - \mu_{1}).
+\end{equation}
+where we use the Subscripts $1$ and $2$ to refer to the $1$st and $2$nd subset
+of $y$, respectively. Setting $y_1 = y_{-i}$, $y_2 = y_i$ for $i = 1, \ldots, N$
+and noting that $N_1 = N_{-i} = N - 1$ completes the proof.
+ \hfill $\Box$
+
+*Proof* of Proposition \ref{prop-eff-student}.
+The correctness of Equations \eqref{cmeant2} and \eqref{csdt2} follows directly
+from Equations \eqref{cmean2}, and \eqref{csd2}. To show \eqref{cbeta2}, we
+perform a rank-one update of $\Sigma^{-1}$ as per Theorem 2.1 of @juarez2016 based on the Sherman-Morrison formula [@bartlett1951; @sherman1950]. In general, if we exclude row
+$p$ and column $q$ from $\Sigma$, the inverse $\Sigma^{-1}_{-p,-q}$ of $\Sigma_{-p,-q}$ exists if $\sigma_{pq} \neq 0$ and $\bar{\sigma}_{pq} \neq 0$. The 
+elements $m_{jk}$ ($j,k = 1,\ldots,N$, $j \neq p$, $k \neq q$) of $\Sigma^{-1}_{-p,-q}$
+are then given by
+\begin{equation}
+m_{jk} = \bar{\sigma}_{jk} - 
+  \frac{\bar{\sigma}_{jp} \bar{\sigma}_{qk}}{\bar{\sigma}_{pq}}.
+\end{equation}
+where $\bar{\sigma}_{jk}$ is the $(j,k)$th element of $\Sigma^{-1}$.
+We now set $p = q = i$ and note that $\sigma_{ii} > 0$ and $\bar{\sigma}_{ii} > 0$ 
+since $\Sigma$ is a covariance matrix, which leads to 
+\begin{equation}
+m_{jk} = \bar{\sigma}_{jk} -
+  \frac{\bar{\sigma}_{ji} \bar{\sigma}_{ik}}{\bar{\sigma}_{ii}}.
+\end{equation}
+for each $i = 1,\ldots,N$. Switching to matrix notation completes the proof. 
+\hfill $\Box$

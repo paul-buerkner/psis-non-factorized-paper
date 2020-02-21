@@ -2,8 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
-psis_non_factorizable_models_cache/
-psis_non_factorizable_models_files/
+archive/
+models/
+psis-non-factorizable-models_cache/
+psis-non-factorizable-models_files/
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
