@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 archive/
-models/
+models/*_dummy.rds
 psis-non-factorizable-models_cache/
 psis-non-factorizable-models_files/
 
