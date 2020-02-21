@@ -15,9 +15,9 @@ abstract: |
   increased robustness against outliers. We derive how to efficiently compute
   and validate both exact and approximate LOO-CV for Bayesian non-factorizable
   models with a multivariate normal or student-t likelihood. In a case study, we
-  apply this method to lagged simultaneously autoregressive (SAR)
-  models.\linebreak\linebreak Keywords: cross-validation, Pareto-smoothed
+  demonstrate this method using lagged simultaneously autoregressive (SAR)
   importance-sampling, non-factorizable models, Bayesian inference, SAR models
+  models.\linebreak\linebreak Keywords: cross-validation, Pareto-smoothed
 lang: en-US
 class: man
 figsintext: true
@@ -37,7 +37,6 @@ header-includes:
    - \usepackage{setspace}
    - \onehalfspacing
    - \newtheorem{proposition}{Proposition}
-   #- \setcitestyle{round}
    - \newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
 editor_options: 
   chunk_output_type: console
@@ -104,10 +103,10 @@ one at a time and then predicted based on the model fit to the remaining data.
 Predictive accuracy is evaluated by first computing a pointwise predictive
 measure and then taking the sum of these values over all observations to obtain
 a single measure of predictive accuracy [e.g., @vehtari2017loo].
-In this paper, we focus on the expected log predictive density (ELPD) as measure
+In this paper, we focus on the expected log predictive density (ELPD) as the measure
 of predictive accuracy. The ELPD takes the whole predictive distribution into
-account and is less focussed on the bulk of the distribution as are other common
-measures such as root mean squared error (RMSE) or mean absolute error [MAE; see
+account and is less focused on the bulk of the distribution compared to other common
+measures like root mean squared error (RMSE) or mean absolute error [MAE; see
 @vehtari2012 for details]. Exact LOO-CV is costly, as it requires fitting the
 model as many times as there are observations in the data. Depending on the size
 of the data, complexity of the model, and estimation method, this can be
@@ -121,32 +120,18 @@ joint likelihood of the model over all observations has to be factorizable. That
 is, the observations have to be pairwise conditionally independent given the
 model parameters. However, many important models do not have this property.
 Particularly in temporal and spatial statistics it is common to fit models with
-multivariate normal likelihoods that have structured covariance matrices such
-that the likelihood does not factorize. This is typically due to the fact that
-observations depend on other observations from different time periods or
-different spatial units in addition to the dependence on the model parameters.
-
-It is well known that (multivariate) normal models are easily influenced by
-outliers due to the light tails of the (multivariate) normal distribution [e.g.,
-@schwager1982]. Hence, generalizations of the multivariate normal distribution
-have been suggested that are more robust against outliers, most notably the
-multivariate student-t distribution [e.g., @zellner1976]. This distribution has
-an additional positive *degrees of freedom* parameter usually denoted as $\nu$,
-which controls the tails of the distribution. If $\nu$ small, the tails are very
-fat making outliers less surprising under the implied distribution and thus less
-influencial for the resulting parameter estimates. If $\nu$ is large, the
-multivariate student-t distribution becomes more similar to the corresponding
-multivariate normal distribution and is equal to the latter for $\nu \rightarrow
-\infty$. As $\nu$ can be estimated alongside the other model parameters in
-student-t models, the fatness of the tails is flexibly adjusted based on pattern
-of the observed response values.
+multivariate normal or student-t likelihoods that have structured covariance
+matrices such that the likelihood does not factorize. This is typically due to
+the fact that observations depend on other observations from different time
+periods or different spatial units in addition to the dependence on the model
+parameters.
 
 In this paper we derive how to perform efficient approximate LOO-CV for
 \emph{any} Bayesian multivariate normal or student-t model with an invertible
-covariance matrix, regardless of whether or not the likelihood factorizes. We
-also provide equations for computing exact LOO-CV for these models, which can be
-used to validate the approximation and to handle problematic observations. 
-Throughout, a Bayesian model specification
+covariance or scale matrix, regardless of whether or not the likelihood
+factorizes. We also provide equations for computing exact LOO-CV for these
+models, which can be used to validate the approximation and to handle
+problematic observations. Throughout, a Bayesian model specification
 and estimation via Markov chain Monte Carlo (MCMC) is assumed. We have
 implemented the developed methods in the R package brms [@brms1; @brms2]. 
 All materials including R source code are available in an online
@@ -174,15 +159,15 @@ the model while holding out the $i$th observation (in Section
 be avoided). The pointwise log-likelihood $p(y_i\,|\, y_{-i}, \theta)$ is
 straightforward to compute for \emph{factorizable} models in which response
 values are conditionally independent given $\theta$, that is, if 
-$p(y_i\,|\,y_{-i}, \theta) = p(y_i\,|\, \theta)$. The overall likelihood can then be
-written in the familiar form
+$p(y_i\,|\,y_{-i}, \theta) = p(y_i\,|\, \theta)$. The full likelihood can then 
+be written in the familiar form
 <!-- -->
 \begin{equation}
 p(y \,|\, \theta) = \prod_{i=1}^N p(y_i \,|\, \theta).
 \end{equation}
 <!-- -->
 When $p(y \,|\, \theta)$ factorizes this way, the conditional
-pointwise log-likelihood can be obtained easily through 
+pointwise log-likelihood can be obtained easily by computing 
 $\log p(y_i \,|\, \theta)$ for each $i$ with computational cost $O(n)$. 
 
 The situation is more
@@ -205,13 +190,13 @@ of vector $y$ is given by
   \exp \left(-\frac{1}{2}(y - \mu)^{\rm T} \Sigma^{-1} (y - \mu) \right)
 \end{equation}
 <!-- -->
-with mean vector $\mu$ and covariance matrix $\Sigma$. Usually, $\mu$ and
-$\Sigma$ are functions of the model parameters $\theta$, that is, $\mu =
-\mu(\theta)$ and $\Sigma = \Sigma(\theta)$. Unless necessary, we omit the
-dependence of $\mu$ and $\Sigma$ on $\theta$ in the following for notational
-convenience. Using standard multivariate normal theory [e.g., @tong2012], we know
-that the conditional distribution of $p(y_i | y_{-i}, \theta)$ of the $i$th
-observation is univariate normal with mean
+with mean vector $\mu$ and covariance matrix $\Sigma$. Often $\mu$ and $\Sigma$
+are functions of the model parameters $\theta$, that is, $\mu = \mu(\theta)$ and
+$\Sigma = \Sigma(\theta)$, but for notational convenience we omit the potential
+dependence of $\mu$ and $\Sigma$ on $\theta$ unless it is relevant. Using
+standard multivariate normal theory [e.g., @tong2012], we know that for the
+$i$th observation the conditional distribution $p(y_i | y_{-i}, \theta)$ is 
+univariate normal with mean
 <!-- -->
 \begin{equation}
 \label{cmean}
@@ -225,14 +210,13 @@ and variance
   \tilde{\sigma}_{i} = \sigma_{ii} + \sigma_{i,-i} \Sigma^{-1}_{-i} \sigma_{-i,i}
 \end{equation}
 <!-- -->
-Here, $\Sigma_{-i}$ is the covariance matrix of all but the $i$th observation,
-which is obtainable from $\Sigma$ by removing the $i$th row and column,
-$\Sigma^{-1}_{-i}$ is the inverse of $\Sigma_{-i}$, and $\mu_{-i}$ is the mean
-vector $\mu$ without the $i$th element. Further, $\sigma_{i,-i}$ and
-$\sigma_{-i,i}$ are the $i$th row and column vectors of $\Sigma$, respectively,
-without the $i$th element and $\sigma_{ii}$ is the $i$th diagnonal element of
-$\Sigma$. Equations \eqref{cmean} and \eqref{csd} can be used already to compute
-the pointwise log-likelihood values in the normal case as
+In the equations above, $\mu_{-i}$ is the mean vector without the $i$th element,
+$\Sigma_{-i}$ is the covariance matrix without the $i$th row and column
+($\Sigma^{-1}_{-i}$ is its inverse), $\sigma_{i,-i}$ and $\sigma_{-i,i}$ are the
+$i$th row and column vectors of $\Sigma$ without the $i$th element, and
+$\sigma_{ii}$ is the $i$th diagnonal element of $\Sigma$. Equations
+\eqref{cmean} and \eqref{csd} can be used to compute the pointwise
+log-likelihood values as
 <!-- -->
 \begin{equation}
 \label{lp-normal}
@@ -242,19 +226,21 @@ the pointwise log-likelihood values in the normal case as
 \end{equation}
 <!-- -->
 Evaluating equation \eqref{lp-normal} for each $y_i$ and each posterior draw 
-$\theta_s$ then constitutes the input for the LOO-CV computations.
-However, the resulting procedure is quite inefficient.
-Computational cost is usually dominated by the computation of
-$\Sigma_{-i}^{-1}$, which is in $O(n^k)$. If $\Sigma$ is dense, we have $k = 3$,
-and for sparse $\Sigma$ or reduced rank computations, we have $2 < k < 3$. Since
-$\Sigma_{-i}^{-1}$ needs to be computed for each $i$, this increases the overall
-complexity to $O(N^{k + 1})$. If $\Sigma_{-i}$ additionally depends on the model
-parameters $\theta$ in a non-trivial manner, which is the case for most models
-of practical relevance, it needs to be inverted for each of the $S$ posterior
-draws. Thus, the overall complexity increases further to $O(S N^{k+1})$, which
-can be considered quite inefficient. Accordingly, we seek to find
+$\theta_s$ then constitutes the input for the LOO-CV computations. However, the
+resulting procedure is quite inefficient. Computation is usually dominated by
+the $O(N^k)$ cost of computing $\Sigma_{-i}^{-1}$, where $k$ depends on the
+structure of $\Sigma$. If $\Sigma$ is dense then $k = 3$. For sparse $\Sigma$ or
+reduced rank computations we have $2 < k < 3$. And since $\Sigma_{-i}^{-1}$
+must be computed for each $i$, the overall complexity is actually 
+$O(N^{k + 1})$.
+
+Additionally, if $\Sigma_{-i}$ also depends on the model parameters $\theta$ in
+a non-trivial manner, which is the case for most models of practical relevance,
+then it needs to be inverted for each of the $S$ posterior draws. Therefore, in
+most applications the overall complexity will actually be $O(S N^{k+1})$, which
+will be impractical in most situations. Accordingly, we seek to find
 more efficient expressions for $\tilde{\mu}_{i}$ and $\tilde{\sigma}_{i}$
-that bring it back into computationally feasible regions.
+that make these computations feasible in practice.
 <!-- -->
 \begin{proposition}
 \label{prop-eff-normal}
@@ -273,20 +259,19 @@ where $g_i = \left[\Sigma^{-1} (y - \mu)\right]_i$ and
 $\bar{\sigma}_{ii} = \left[\Sigma^{-1}\right]_{ii}$. 
 \end{proposition}
 <!-- -->
-The proof based on results of
-@sundararajan2001 is shown in the Appendix. Contrary to the brute force
-computations in \eqref{cmean} and \eqref{csd} where $\Sigma_{-i}$ has to be
-inverted separately for each $i$, \eqref{cmean2} and \eqref{csd2} require
-inverting the full covariance matrix $\Sigma$ only once and reuse it for each
-$i$. Thus, the computational cost reduces to $O(N^k)$ if $\Sigma$ is independent
-of $\theta$ and $O(S N^k)$ otherwise. If the model is parameterized
-in terms of the covariance matrix $\Sigma = \Sigma(\theta)$, it is not possible
-to reduce the complexity further as inverting $\Sigma$ is unavoidable.
-However, if the model is parameterized
-directly through the inverse of $\Sigma$, that is $\Sigma^{-1} = \Sigma^{-1}(\theta)$,
-complexity goes down to $O(S N^2)$. Note that the latter is not possible in 
-the brute force approach as both $\Sigma$ and $\Sigma^{-1}$ are required
-in this case.
+The proof is based on results from @sundararajan2001 and is provided in 
+the Appendix. Contrary to the brute force
+computations in \eqref{cmean} and \eqref{csd}, where $\Sigma_{-i}$ has to be
+inverted separately for each $i$, equations \eqref{cmean2} and \eqref{csd2} require
+inverting the full covariance matrix $\Sigma$ only once and it can be reused for each
+$i$. This reduces the computational cost to $O(N^k)$ if $\Sigma$ is independent
+of $\theta$ and $O(S N^k)$ otherwise. If the model is parameterized in terms of
+the covariance matrix $\Sigma = \Sigma(\theta)$, it is not possible to reduce
+the complexity further as inverting $\Sigma$ is unavoidable. However, if the
+model is parameterized directly through the inverse of $\Sigma$, that is
+$\Sigma^{-1} = \Sigma^{-1}(\theta)$, the complexity goes down to $O(S N^2)$.
+Note that the latter is not possible in the brute force approach as both
+$\Sigma$ and $\Sigma^{-1}$ are required.
 
 <!--
 \cite{sundararajan2001} provide equations for the predictive mean and standard
@@ -321,6 +306,21 @@ Equation (34).}:
 
 ## Non-factorizable student-t models
 
+It is well known that (multivariate) normal models are easily influenced by
+outliers due to the light tails of the normal distribution [e.g.,
+@schwager1982]. Generalizations of the multivariate normal distribution
+have been suggested that are more robust to outliers, most notably the
+multivariate student-t distribution [e.g., @zellner1976], which has
+an additional positive *degrees of freedom* parameter $\nu$
+that controls the tails of the distribution. If $\nu$ is small, the tails are
+fat and extreme data points are less surprising under the model
+and thus less influential for the resulting parameter estimates. If $\nu$ is
+large, the multivariate student-t distribution becomes more similar to the
+corresponding multivariate normal distribution and is equal to the latter for
+$\nu \rightarrow \infty$. As $\nu$ can be estimated alongside the other model
+parameters in student-t models, the fatness of the tails is flexibly adjusted
+based on information from the observed response values and the prior.
+
 The density of the $N$ dimensional multivariate student-t distribution 
 of vector $y$ is given by
 <!-- -->
@@ -331,12 +331,11 @@ of vector $y$ is given by
   \left(1 + \frac{1}{\nu} (y - \mu)^{\rm T} \Sigma^{-1} (y - \mu) \right)^{-(\nu + N)/2}
 \end{equation}
 <!-- -->
-with degrees of freedom $\nu$, location vector $\mu$
-and scale matrix $\Sigma$. Note that, $\mu$ is the mean of $y$ if $\nu > 1$ and
-$\frac{\nu}{\nu-2}\Sigma$ is the covariance matrix if $\nu > 2$.
-Similar to the multivariate normal case, the conditional distribution
-of the $i$th observation given all other observations $p(y_i | y_{-i}, \theta)$
-can be computed analytically.
+with degrees of freedom $\nu$, location vector $\mu$ and scale matrix $\Sigma$.
+The mean of $y$ is $\mu$ if $\nu > 1$ and $\frac{\nu}{\nu-2}\Sigma$ is the
+covariance matrix if $\nu > 2$. Similar to the multivariate normal case, the
+conditional distribution of the $i$th observation given all other observations
+and the model parameters, $p(y_i | y_{-i}, \theta)$, can be computed analytically.
 \begin{proposition}
 \label{prop-cond-student}
 If $y$ is multivariate student-t with degrees of freedom $\nu$, location vector
@@ -362,8 +361,8 @@ where
 \end{equation}
 \end{proposition}
 <!-- -->
-The proof based on results of @shah2014 is given in the Appendix.
-Note that $\tilde{\mu}_{i}$ is the same as in the normal case and $\tilde{\sigma}_{i}$
+A proof based on results of @shah2014 is given in the Appendix.
+Here $\tilde{\mu}_{i}$ is the same as in the normal case and $\tilde{\sigma}_{i}$
 is the same up to the correction factor $\frac{\nu + \beta_{-i}}{\nu + N - 1}$,
 which approaches $1$ for $\nu \rightarrow \infty$ as one would expect.
 Based on the above equations, we can compute the pointwise log-likelihood 
@@ -379,7 +378,7 @@ values in the student-t case as
 <!-- -->
 This approach has the same overall computational cost of $O(S N^{k+1})$ as 
 the non-optimized normal case and is therefore quite inefficient. 
-However, efficiency can again be improved.
+Fortunately, the efficiency can again be improved.
 \begin{proposition}
 \label{prop-eff-student}
 If $y$ is multivariate student-t with degrees of freedom $\nu$, location vector
@@ -408,16 +407,16 @@ a single $i$ is an $O(N^2)$ operation, which needs to be repeated for each
 observation. So the cost of computing $\beta_{-i}$ for all observations is
 $O(N^3)$. The cost of inverting $\Sigma$ continues to be $O(N^k)$ and so the
 overall cost is dominated by $O(N^3)$, or $O(S N^3)$ if $\Sigma$ depends on the
-model parameters $\theta$ in a non-trivial manner. That is, in contrast to the
+model parameters $\theta$ in a non-trivial manner. Unlike the
 normal case, we cannot reduce the computational costs below $O(S N^3)$ even
-if the model was parameterized directly in terms of $\Sigma^{-1} = \Sigma^{-1}(\theta)$ and thus avoided matrix inversion altogether.
-However, we are still substantially more efficient than the brute force
+if the model is parameterized directly in terms of $\Sigma^{-1} = \Sigma^{-1}(\theta)$ and so avoids matrix inversion altogether.
+However, this is still substantially more efficient than the brute force
 approach, which requires $O(S N^{k+1}) > O(SN^3)$ operations.
 
 
 ## Example: Lagged SAR models
 
-It often requires additional work to take a given multivariate or student-t
+It often requires additional work to take a given multivariate normal or student-t
 model and express it in the form required to apply the equations for the
 predictive mean and standard deviation. Consider, for example, the lagged
 simultaneous autoregressive (SAR) model [@cressie1992; @haining2003], a spatial
