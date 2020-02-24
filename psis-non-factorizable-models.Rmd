@@ -901,7 +901,7 @@ approximate LOO-CV estimation, the mere existance of such problematic
 observations raises doubts about the appropriateness of the normal SAR model for
 the present data. In particular, since normal models are easily influenced by
 outliers, we should be worried about the robustness of the parameter estimates
-in the light of the outlying data point. Accordingly, it is sensible to fit a
+in light of the extreme data point. Accordingly, it is sensible to fit a
 student-t SAR model as a potentially better predicting and more robust
 alternative. We choose an informative ${\rm Gamma}(4, 0.5)$ prior (with mean $8$
 and standard deviation $4$) on the degrees of freedom parameter $\nu$ to ensure
@@ -1127,10 +1127,11 @@ Indeed, comparison between the approximate ($\text{elpd}_{\text{approx}} =$
 `r loo_sar_student$estimates[1, 1]`) and exact LOO-CV 
 ($\text{elpd}_{\text{exact}} =$ `r exact_elpd_student`) based on the complete
 data demonstrates that they are very similar (up to random error due to the MCMC
-estimation). The results showns in Figure \@ref(fig:plots-student) (c) and (d)
-provide further evidence for both, the correctness of our (exact and
+estimation). The results shown in Figure \@ref(fig:plots-student) (c) and (d)
+have the same interpretation as the analagous plots for the normal case and
+provide further evidence for both the correctness of our (exact and
 approximate) LOO-CV methods for non-factorizable student-t models and for the
-goodness of the PSIS-LOO-CV approximation for the present student-t SAR model.
+quality of the PSIS-LOO-CV approximation for the present student-t SAR model.
 
 ```{r}
 looc <- loo_compare(loo_sar_normal_refit, loo_sar_student)
@@ -1142,8 +1143,8 @@ model. The ELPD difference between the two models is `r looc[2, "elpd_diff"]`
 (SE = `r looc[2, "se_diff"]`) in favor of the student-t model, and thus very
 small and not substantial for any practical purposes. As shown in Figure
 \@ref(fig:elpd-approx-compare), the pointwise elpd contributions are also highly
-similar. Only for the 4th observation, the student-t model fits slightly but
-noticably better.
+similar. The student-t model fits slightly but noticably better only for the 4th
+observation.
 
 ```{r elpd-approx-compare, fig.cap = "Comparison of approximate pointwise elpd values for the normal SAR model (after refit for the 4th observation) and the student-t SAR model (without refit). Observations with relevant differences are highlighted in red.", fig.height=2.5}
 df_compare <- data.frame(
