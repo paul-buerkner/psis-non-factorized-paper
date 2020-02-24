@@ -1164,17 +1164,16 @@ ggplot(df_compare, aes(x = approx_elpd_normal, y = approx_elpd_student)) +
 
 # Conclusion
 
-In the present paper, we have derived how to perform and validate exact and
-approximate leave-one-out cross-validation (LOO-CV) for non-factorizable
-multivariate normal and student-t models; models which are highly relevant to
-temporal and spatial statistics. The developed LOO-CV approximations make model
-fit evaluation and comparison feasible, efficient, and robust. We thus expect them
-to fine widespread application. The primary motivation for
-this paper is to enable approximate LOO-CV for models that cannot be factorized
-at all, but our approach also works for *any* Bayesian model that can be
-expressed in terms of a multivariate normal or student-t likelihood. Therefore
-it may also be useful for models that are factorizable but for which the
-factorized representation is difficult to compute or not available to the
+In this paper we derived how to perform and validate exact and approximate
+leave-one-out cross-validation (LOO-CV) for non-factorizable multivariate normal
+and student-t models that are highly relevant to temporal and spatial
+statistics. The LOO-CV approximations make model fit evaluation and comparison
+feasible, efficient, and robust for widespread application. The primary
+motivation for this paper is to enable approximate LOO-CV for models that cannot
+be factorized at all, but our approach also works for *any* Bayesian model that
+can be expressed in terms of a multivariate normal or student-t likelihood.
+Therefore it may also be useful for models that are factorizable but for which
+the factorized representation is difficult to compute or not available to the
 researcher for some other reason.
 
 # Acknowledgements
