@@ -402,16 +402,17 @@ where $g_i = \left[\Sigma^{-1} (y - \mu)\right]_i$,
 $\bar{\sigma}_{ii} = \left[\Sigma^{-1}\right]_{ii}$, and 
 $\bar{\sigma}_{-i,i} = \left[\Sigma^{-1}\right]_{-i,i}$ is the $i$th column vector of $\Sigma^{-1}$ without the $i$th element. 
 \end{proposition}
-The proof is provided in the Appendix. Computing $\beta_{-i}$ for
-a single $i$ is an $O(N^2)$ operation, which needs to be repeated for each
-observation. So the cost of computing $\beta_{-i}$ for all observations is
-$O(N^3)$. The cost of inverting $\Sigma$ continues to be $O(N^k)$ and so the
-overall cost is dominated by $O(N^3)$, or $O(S N^3)$ if $\Sigma$ depends on the
-model parameters $\theta$ in a non-trivial manner. Unlike the
-normal case, we cannot reduce the computational costs below $O(S N^3)$ even
-if the model is parameterized directly in terms of $\Sigma^{-1} = \Sigma^{-1}(\theta)$ and so avoids matrix inversion altogether.
-However, this is still substantially more efficient than the brute force
-approach, which requires $O(S N^{k+1}) > O(SN^3)$ operations.
+The proof is provided in the Appendix. After inverting $\Sigma$, computing
+$\beta_{-i}$ for a single $i$ is an $O(N^2)$ operation, which needs to be
+repeated for each observation. So the cost of computing $\beta_{-i}$ for all
+observations is $O(N^3)$. The cost of inverting $\Sigma$ continues to be
+$O(N^k)$ and so the overall cost is dominated by $O(N^3)$, or $O(S N^3)$ if
+$\Sigma$ depends on the model parameters $\theta$ in a non-trivial manner.
+Unlike the normal case, we cannot reduce the computational costs below $O(S
+N^3)$ even if the model is parameterized directly in terms of $\Sigma^{-1} =
+\Sigma^{-1}(\theta)$ and so avoids matrix inversion altogether. However, this is
+still substantially more efficient than the brute force approach, which requires
+$O(S N^{k+1}) > O(SN^3)$ operations.
 
 
 ## Example: Lagged SAR models
