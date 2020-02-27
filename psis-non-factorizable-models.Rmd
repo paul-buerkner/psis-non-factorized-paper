@@ -1190,7 +1190,7 @@ We thank Daniel Simpson for useful discussion and the Academy of Finland
 <br />
 
 *Proof* of Proposition \ref{prop-eff-normal}. 
-In their Lemma 1, @sundararajan2001 proof for any finite subset $z$ of a 
+In their Lemma 1, @sundararajan2001 prove for any finite subset $z$ of a 
 zero-mean Gaussian process with covariance matrix $\Sigma$ that the LOO predictive
 mean and standard deviation can be computed as
 <!-- -->
@@ -1213,7 +1213,7 @@ mean $(y_i - \mu_i) - \frac{g_i}{\bar{\sigma}_{ii}}$, then $y$ has LOO mean $y_i
 
 *Proof* of Proposition \ref{prop-cond-student}. 
 Using the parametrization $K := {\rm Cov}(y) = \frac{\nu}{\nu - 2} \Sigma$ and
-requiring $\nu > 2$, @shah2014 proof in their Lemma 3 that, if $y = (y_1, y_2)$
+requiring $\nu > 2$, @shah2014 prove in their Lemma 3 that, if $y = (y_1, y_2)$
 is multivariate student-t of dimension $N = N_1 + N_2$, then $y_2$ given $y_1$
 is multivaratiate student-t of dimension $N_2$. Moreover, they provide equations
 for the parameters of the conditional student-t distribution. When we
