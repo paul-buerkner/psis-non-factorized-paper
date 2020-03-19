@@ -304,22 +304,27 @@ Equation (34).}:
 \end{equation}
 -->
 
-## Non-factorizable student-t models
+## Non-factorizable Student-t models
 
-It is well known that (multivariate) normal models are easily influenced by
-outliers due to the light tails of the normal distribution [e.g.,
-@schwager1982]. Generalizations of the multivariate normal distribution
-have been suggested that are more robust to outliers, most notably the
-multivariate student-t distribution [e.g., @zellner1976], which has
-an additional positive *degrees of freedom* parameter $\nu$
-that controls the tails of the distribution. If $\nu$ is small, the tails are
-fat and extreme data points are less surprising under the model
-and thus less influential for the resulting parameter estimates. If $\nu$ is
-large, the multivariate student-t distribution becomes more similar to the
-corresponding multivariate normal distribution and is equal to the latter for
-$\nu \rightarrow \infty$. As $\nu$ can be estimated alongside the other model
-parameters in student-t models, the fatness of the tails is flexibly adjusted
-based on information from the observed response values and the prior.
+Several generalizations of the multivariate normal distribution have been
+suggested, perhaps most notably the multivariate Student-t distribution 
+[@zellner1976], which has an additional positive *degrees of freedom* parameter
+$\nu$ that controls the tails of the distribution. If $\nu$ is small, the tails
+are much fatter than those of the normal distribution. If $\nu$ is large, the
+multivariate student-t distribution becomes more similar to the corresponding
+multivariate normal distribution and is equal to the latter for $\nu \rightarrow
+\infty$. As $\nu$ can be estimated alongside the other model parameters in
+student-t models, the fatness of the tails is flexibly adjusted based on
+information from the observed response values and the prior. The (multivariate)
+student-t distribution has been studied in various places [e.g., @zellner1976;
+@ohagan1979;@fernandez1999; @zhang2010; @piche2012; @shah2014]. For example, Student-t
+processes which are based on the multivariate Student-t distribution constitute
+a generalization of Gaussian processes while retaining most of the latter's
+favorable properties [@shah2014][^tprocess].
+
+[^tprocess]: A Student-t process is not to be confused with a factorized
+univariate Student-t likelihood in combination with a Gaussian process on the
+corresponding latent values as these models have different properties.
 
 The density of the $N$ dimensional multivariate student-t distribution 
 of vector $y$ is given by
@@ -478,7 +483,7 @@ $\rho$ in a non-trivial manner, $\widetilde{W}^{-1}$ needs to be computed for
 each posterior draw, which implies an overall computational cost of less than
 $O(S N^3)$. 
 
-If the errors are student-t distributed, we can apply analogous transformations as above to arrive at the student-t distribution for the responses
+If the residuals are student-t distributed, we can apply analogous transformations as above to arrive at the student-t distribution for the responses
 <!-- -->
 \begin{equation}
 y \sim \mathrm{t}\left(\nu, \widetilde{W}^{-1} \eta, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right),
@@ -900,19 +905,17 @@ almost equal for the complete data set as well.
 Although we were able to correct for the problematic observation in the
 approximate LOO-CV estimation, the mere existance of such problematic
 observations raises doubts about the appropriateness of the normal SAR model for
-the present data. In particular, since normal models are easily influenced by
-outliers, we should be worried about the robustness of the parameter estimates
-in light of the extreme data point. Accordingly, it is sensible to fit a
-student-t SAR model as a potentially better predicting and more robust
-alternative. We choose an informative ${\rm Gamma}(4, 0.5)$ prior (with mean $8$
-and standard deviation $4$) on the degrees of freedom parameter $\nu$ to ensure
-rather fat tails of the likelihood and thus greater robustness against outliers.
-For all other parameters, we continue to use the weakly-informative default
-priors of brms. In Figure \@ref(fig:plots-student) (a), the marginal posterior
-distributions of the main model parameters are depicted. Comparing the results
-to those shown in Figure \@ref(fig:plots-normal) (a), we see that the
-estimates of both the regression parameters and the SAR autocorrelation are
-quite similar to the estimates obtained from the normal model.
+the present data. Accordingly, it is sensible to fit a student-t SAR model as a
+potentially better predicting alternative due to its fatter tails. We choose an
+informative ${\rm Gamma}(4, 0.5)$ prior (with mean $8$ and standard deviation
+$4$) on the degrees of freedom parameter $\nu$ to ensure rather fat tails of the
+likelihood a-priori. For all other parameters, we continue to use the
+weakly-informative default priors of brms. In Figure \@ref(fig:plots-student)
+(a), the marginal posterior distributions of the main model parameters are
+depicted. Comparing the results to those shown in Figure \@ref(fig:plots-normal)
+(a), we see that the estimates of both the regression parameters and the SAR
+autocorrelation are quite similar to the estimates obtained from the normal
+model.
 
 <!--
 ```{r, eval=FALSE}
