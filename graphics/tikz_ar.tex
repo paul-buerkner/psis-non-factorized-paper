@@ -1,0 +1,31 @@
+\RequirePackage{luatex85}
+\documentclass[tikz,border=5]{standalone}
+\usetikzlibrary{graphs,graphdrawing,arrows.meta,quotes,shapes.geometric}
+\usegdlibrary{layered,trees}
+
+\begin{document}
+\begin{tikzpicture}[>=Stealth]
+\graph [tree layout,
+  edge quotes mid, edge quotes={
+    fill=white, font=\normalsize, shape=circle, inner sep=0
+  }, 
+  sibling distance=0.3cm, sibling sep=0.5cm, component sep=0.1cm,
+  level 1/.style={nodes={circle, draw, inner sep=0.1cm}},
+  level 2/.style={nodes={rectangle, draw, inner sep=0.15cm}},
+  level distance=2cm, 
+  grow=down
+]
+{
+  psi/[as=$\psi$] -> y1/[as=$y_1$];
+  psi -> y2/[as=$y_2$];
+  psi -> y3/[as=$y_3$];
+  psi -> y4/[as=$y_4$];
+  psi -> y5/[as=$y_5$];
+  y1 -> y2;
+  y2 -> y3;
+  y3 -> y4;
+  y4 -> y5;
+};
+\node at (-2.3,0.2) {(b)};
+\end{tikzpicture}
+\end{document}
