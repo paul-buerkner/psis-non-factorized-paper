@@ -1317,7 +1317,7 @@ Development) for partial support of this work.
 <br />
 
 *Proof* of Proposition \ref{prop-eff-normal}. 
-In their Lemma 1, @sundararajan2001 proof for any finite subset $z$ of a 
+In their Lemma 1, @sundararajan2001 prove for any finite subset $z$ of a 
 zero-mean Gaussian process with covariance matrix $\Sigma$ that the LOO predictive
 mean and standard deviation can be computed as
 <!-- -->
