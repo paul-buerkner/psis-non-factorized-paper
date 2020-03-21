@@ -4,8 +4,8 @@
 .Ruserdata
 archive/
 models/*_dummy.rds
-psis-non-factorizable-models_cache/
-psis-non-factorizable-models_files/
+psis-non-factorized-models_cache/
+psis-non-factorized-models_files/
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
@@ -19,7 +19,7 @@ psis-non-factorizable-models_files/
 *.fot
 *.cb
 *.cb2
-.*.lb
+*.lb
 
 
 ## Bibliography auxiliary files (bibtex/biblatex/biber):

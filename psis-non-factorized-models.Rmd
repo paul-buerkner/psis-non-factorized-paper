@@ -18,14 +18,14 @@ abstract: |
   multivariate normal or Student-t likelihood. In a case study, we demonstrate
   this method using lagged simultaneously autoregressive (SAR) models.
   \linebreak\linebreak 
-  Keywords: cross-validation, Pareto-smoothed importance-sampling,
   non-factorized models, Bayesian inference, SAR models
+  Keywords: cross-validation, Pareto-smoothed importance-sampling,
 lang: en-US
 class: man
 figsintext: true
 numbersections: true
 encoding: UTF-8
-bibliography: psis-non-factorizable-models
+bibliography: psis-non-factorized-models
 biblio-style: apalike
 output:
   bookdown::pdf_document2:
@@ -143,7 +143,7 @@ and estimation via Markov chain Monte Carlo (MCMC) is assumed. We have
 implemented the developed methods in the R package brms [@brms1; @brms2]. 
 All materials including R source code are available in an online
 supplement.\footnote{Supplemental materials available at
-\url{https://github.com/paul-buerkner/psis-non-factorizable-paper}.}
+\url{https://github.com/paul-buerkner/psis-non-factorized-paper}.}
 
 # Pointwise log-likelihood for non-factorized models {#pwnf}
 
