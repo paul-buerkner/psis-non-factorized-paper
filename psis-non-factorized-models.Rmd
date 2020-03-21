@@ -236,12 +236,18 @@ log-likelihood contributions remains in $O(n)$.
   \includegraphics{graphics/tikz_joint.pdf}
   %\captionof{figure}{Another figure}
 \end{minipage}
-\caption{Examples for directional graphs illustratiting common 
-likelihood formulations schematically. Black retangles depict manifest variables, that is,
-observed response values. Black circles depict latent variables and parameters. Blue rectangles indicate a joint prior over the surronded variables. (a) Conditionally independent responses given hyperparameters (e.g., a linear regression model). (b) Conditionally dependent
-responses with a Markove property (e.g., an autoregressive model of order 1). (c) Conditionally
-independent responses given observation-specific latent variables with a joint prior (e.g., a latent Gaussian process model). (d)  Conditionally
-independent responses given observation-specific latent variables with a Markov property (e.g., a hidden Markov model). (e) Non-factorized model with a joint likelihood over all responses.}
+\caption{Directional graphs illustrating common likelihood formulations
+schematically. Black retangles depict manifest variables, that is, observed
+response values. Black circles depict latent variables and parameters. Blue
+rectangles indicate a joint prior over the surronded variables. (a)
+Conditionally independent responses given hyperparameters (e.g., a linear
+regression model). (b) Conditionally dependent responses with a Markove property
+(e.g., an autoregressive model of order 1). (c) Conditionally independent
+responses given observation-specific latent variables with a joint prior (e.g.,
+a latent Gaussian process model). (d)  Conditionally independent responses given
+observation-specific latent variables with a Markov property (e.g., a hidden
+Markov model). (e) Non-factorized model with a joint likelihood over all
+responses.}
 \label{fig:dags}
 \end{figure}
 
