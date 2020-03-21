@@ -151,7 +151,7 @@ When computing ELPD-based \emph{exact} LOO-CV for a Bayesian model we need to
 compute the log leave-one-out predictive densities $\log{p(y_i | y_{-i})}$ for
 every response value $y_i, \: i = 1, \ldots, N$, where $y_{-i}$ denotes all
 response values except observation $i$. To obtain $p(y_i | y_{-i})$, we need to
-have access to the pointwise log-likelihood $p(y_i\,|\, y_{-i}, \theta)$ and
+have access to the pointwise likelihood $p(y_i\,|\, y_{-i}, \theta)$ and
 integrate over the model parameters $\theta$:
 <!-- -->
 \begin{equation}
@@ -168,7 +168,7 @@ be avoided).
 
 If the full model likelihood is formulated directly as the product of the
 pointwise likelihood contributions $p(y_i\,|\, y_{-i}, \theta)$, we speak of a
-*factorized* model. To better illustrate possible structures of pointwise
+*factorized* model. To better illustrate possible structures of the pointwise
 likelihoods $p(y_i\,|\, y_{-i}, \theta)$, we formally divide $\theta$ into two
 parts, observation-specific latent variables $f = (f_1, \ldots, f_N)$ and
 hyperparameters $\psi$, so that 
@@ -263,7 +263,7 @@ models with observation-specific latent variables (see Figure \ref{fig:dags} (c)
 and (d)) as a non-factorized formulation is often more efficient and numerically 
 stable. For example, in latent GPs combined with a Gaussian
 observation model, one can marginalize over $f$ and formulate the GP directly on
-the manifest response values for increased efficiency [e.g., @rasmussen2003].
+the manifest responses $y$ for increased efficiency [e.g., @rasmussen2003].
 Such marginalization has the additional advantage that both exact and
 approximate leave-one-out preditive estimation become more stable. This is
 because, in the factorized formulation, leaving out response $y_i$ also implies
