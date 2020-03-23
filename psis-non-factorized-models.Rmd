@@ -189,7 +189,7 @@ When the likelihood factorizes this way, the conditional
 pointwise log-likelihood can be obtained easily by computing
 $p(y_i\,|\, \psi)$ for each $i$ with computational cost $O(n)$.
 
-If directional paths between consequtive responses are added,
+If directional paths between consecutive responses are added,
 responses are no longer conditionally independent but the likelihood still
 factorizes. This is common in time-series models. For example, in an
 autoregressive model of order 1 (see Figure \ref{fig:dags} (b)), the pointwise
@@ -203,7 +203,7 @@ processes [GPs; e.g., @rasmussen2003] or spatial conditional autoregressive
 (CAR) models [e.g., @gelfand2003], an explicit joint prior over $f$ is imposed.
 In models with directional paths between the latent values $f$ (see Figure
 \ref{fig:dags} (d)), such as hidden Markov models [HMMs; e.g., @rabiner1986], the
-joint prior over $f$ is defined implicitely via the directional dependencies. What is
+joint prior over $f$ is defined implicitly via the directional dependencies. What is
 more, estimation can make use of the latent Markov property of such models, for
 example, using the Kalman filter [e.g., @welch1995]. In all of these cases, the
 factorization property is retained and computational cost for the pointwise
@@ -237,11 +237,11 @@ log-likelihood contributions remains in $O(n)$.
   %\captionof{figure}{Another figure}
 \end{minipage}
 \caption{Directional graphs illustrating common likelihood formulations
-schematically. Black retangles depict manifest variables, that is, observed
+schematically. Black rectangles depict manifest variables, that is, observed
 response values. Black circles depict latent variables and parameters. Blue
-rectangles indicate a joint prior over the surronded variables. (a)
+rectangles indicate a joint prior over the surrounded variables. (a)
 Conditionally independent responses given hyperparameters (e.g., a linear
-regression model). (b) Conditionally dependent responses with a Markove property
+regression model). (b) Conditionally dependent responses with a Markov property
 (e.g., an autoregressive model of order 1). (c) Conditionally independent
 responses given observation-specific latent variables with a joint prior (e.g.,
 a latent Gaussian process model). (d)  Conditionally independent responses given
@@ -265,7 +265,7 @@ stable. For example, in latent GPs combined with a Gaussian
 observation model, one can marginalize over $f$ and formulate the GP directly on
 the manifest responses $y$ for increased efficiency [e.g., @rasmussen2003].
 Such marginalization has the additional advantage that both exact and
-approximate leave-one-out preditive estimation become more stable. This is
+approximate leave-one-out predictive estimation become more stable. This is
 because, in the factorized formulation, leaving out response $y_i$ also implies
 treating the corresponding latent variable $f_i$ as missing, which is now only
 identified through the joint prior over $f$. If this prior is weak, the
@@ -277,7 +277,7 @@ Whichever of these reasons lead to the use of a non-factorized model, it comes
 at the cost of having no direct access to the leave-one-out 
 predictive densities \eqref{loo-pd} and thus to the overall
 leave-one-out predictive accuracy. In theory, we 
-can express the observation-specifc likelihoods in terms of the joint
+can express the observation-specific likelihoods in terms of the joint
 likelihood via
 <!-- -->
 \begin{equation}
@@ -329,7 +329,7 @@ In the equations above, $\mu_{-i}$ is the mean vector without the $i$th element,
 $\Sigma_{-i}$ is the covariance matrix without the $i$th row and column
 ($\Sigma^{-1}_{-i}$ is its inverse), $\sigma_{i,-i}$ and $\sigma_{-i,i}$ are the
 $i$th row and column vectors of $\Sigma$ without the $i$th element, and
-$\sigma_{ii}$ is the $i$th diagnonal element of $\Sigma$. Equations
+$\sigma_{ii}$ is the $i$th diagonal element of $\Sigma$. Equations
 \eqref{cmean} and \eqref{csd} can be used to compute the pointwise
 log-likelihood values as
 <!-- -->
@@ -555,7 +555,7 @@ or equivalently
 \end{equation}
 <!-- -->
 where $\rho$ is a scalar spatial correlation parameter and $W$ is a user-defined matrix of weights. 
-The matrix $W$ has entires $w_{ii} = 0$ along the diagonal and the off-diagonal entries $w_{ij}$
+The matrix $W$ has entries $w_{ii} = 0$ along the diagonal and the off-diagonal entries $w_{ij}$
 are larger when units $i$ and $j$ are closer to each other but mostly zero as well. In a linear model, 
 the predictor term is $\eta = X \beta$, with design matrix $X$ and regression coefficients $\beta$,
 but the definition of the lagged SAR model holds for arbitrary $\eta$, so 
@@ -590,7 +590,7 @@ $\mu$ with $\widetilde{W}^{-1} \eta$ and taking the covariance matrix $\Sigma$ t
 be $\sigma^2 (\widetilde{W}^T \widetilde{W})^{-1}$. This implies
 $\Sigma^{-1}=\sigma^{-2}\widetilde{W} \widetilde{W}^T$ and so that the overall
 computational cost is dominated by $\widetilde{W}^{-1} \eta$. In SAR models, $W$
-is usally sparse and so is $\widetilde{W}$. Thus, if sparse matrix operations
+is usually sparse and so is $\widetilde{W}$. Thus, if sparse matrix operations
 are used, then the computational cost for $\Sigma^{-1}$ will be less than $O(N^2)$
 and for $\widetilde{W}^{-1}$ it will be less than $O(N^3)$ depending on number
 of non-zeros and the fill pattern. Since $\widetilde{W}$ depends on the parameter
@@ -1018,7 +1018,7 @@ exact LOO-CV ($\text{elpd}_{\text{exact}} =$ `r exact_elpd_normal`) are now
 almost equal for the complete data set as well.
 
 Although we were able to correct for the problematic observation in the
-approximate LOO-CV estimation, the mere existance of such problematic
+approximate LOO-CV estimation, the mere existence of such problematic
 observations raises doubts about the appropriateness of the normal SAR model for
 the present data. Accordingly, it is sensible to fit a Student-t SAR model as a
 potentially better predicting alternative due to its fatter tails. We choose an
@@ -1241,13 +1241,13 @@ grid.arrange(
 
 In contrast to the normal case, we see in Figure \@ref(fig:plots-student) (b) that the 4th observation is no longer recognized as problematic by the Pareto-$k$ diagnostics.
 It does exceed $0.5$ slightly but does not exceed the more important threshold
-of $0.7$ above which we would stop trusing the PSIS-LOO-CV approximation.
+of $0.7$ above which we would stop trusting the PSIS-LOO-CV approximation.
 Indeed, comparison between the approximate ($\text{elpd}_{\text{approx}} =$ 
 `r loo_sar_student$estimates[1, 1]`) and exact LOO-CV 
 ($\text{elpd}_{\text{exact}} =$ `r exact_elpd_student`) based on the complete
 data demonstrates that they are very similar (up to random error due to the MCMC
 estimation). The results shown in Figure \@ref(fig:plots-student) (c) and (d)
-have the same interpretation as the analagous plots for the normal case and
+have the same interpretation as the analogous plots for the normal case and
 provide further evidence for both the correctness of our (exact and
 approximate) LOO-CV methods for non-factorized Student-t models and for the
 quality of the PSIS-LOO-CV approximation for the present Student-t SAR model.
@@ -1262,7 +1262,7 @@ model. The ELPD difference between the two models is `r looc[2, "elpd_diff"]`
 (SE = `r looc[2, "se_diff"]`) in favor of the Student-t model, and thus very
 small and not substantial for any practical purposes. As shown in Figure
 \@ref(fig:elpd-approx-compare), the pointwise elpd contributions are also highly
-similar. The Student-t model fits slightly but noticably better only for the 4th
+similar. The Student-t model fits slightly but noticeably better only for the 4th
 observation.
 
 ```{r elpd-approx-compare, fig.cap = "Comparison of approximate pointwise elpd values for the normal SAR model (after refit for the 4th observation) and the Student-t SAR model (without refit). Observations with relevant differences are highlighted in red.", fig.height=2.5}
@@ -1345,10 +1345,10 @@ mean $(y_i - \mu_i) - \frac{g_i}{\bar{\sigma}_{ii}}$, then $y$ has LOO mean $y_i
 - \frac{g_i}{\bar{\sigma}_{ii}}$ which completes the proof. \hfill $\Box$
 
 *Proof* of Proposition \ref{prop-cond-student}. 
-Using the parametrization $K := {\rm Cov}(y) = \frac{\nu}{\nu - 2} \Sigma$ and
+Using the parameterization $K := {\rm Cov}(y) = \frac{\nu}{\nu - 2} \Sigma$ and
 requiring $\nu > 2$, @shah2014 proof in their Lemma 3 that, if $y = (y_1, y_2)$
 is multivariate Student-t of dimension $N = N_1 + N_2$, then $y_2$ given $y_1$
-is multivaratiate Student-t of dimension $N_2$. Moreover, they provide equations
+is multivariate Student-t of dimension $N_2$. Moreover, they provide equations
 for the parameters of the conditional Student-t distribution. When we
 parameterize for $\Sigma$ instead of $K$ and allow for $\nu > 0$, we can repeat
 their proof analogously which yields the following parameters of the conditional
