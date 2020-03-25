@@ -176,7 +176,8 @@ variables $f = (f_1, \ldots, f_N)$ and hyperparameters $\psi$, so that
 $p(y_i\,|\, y_{-i}, \theta) = p(y_i\,|\, y_{-i}, f_i, \psi)$. 
 Depending on the model, one of the two parts of $\theta$
 may also be empty. In very simple models, such as linear regression models, 
-latent variables are not explicitely presented and response values are conditionally independent given
+latent variables are not explicitely presented and response values are 
+conditionally independent given
 $\psi$, so that $p(y_i\,|\, y_{-i}, f_i, \psi) = p(y_i \,|\, \psi)$ (see Figure
 \ref{fig:dags} (a)). The full likelihood can then be written in the familiar
 form
@@ -207,9 +208,10 @@ In models with directional paths between the latent values $f$ (see Figure
 \ref{fig:dags} (d)), such as hidden Markov models [HMMs; e.g., @rabiner1986], the
 joint prior over $f$ is defined implicitly via the directional dependencies. What is
 more, estimation can make use of the latent Markov property of such models, for
-example, using the Kalman filter [e.g., @welch1995]. In all of these cases, the
-factorization property is retained and computational cost for the pointwise
-log-likelihood contributions remains in $O(n)$.
+example, using the Kalman filter [e.g., @welch1995]. In all of these cases
+(i.e., Figure \ref{fig:dags} (a) to (d)), the factorization property is retained and
+computational cost for the pointwise log-likelihood contributions remains in
+$O(n)$.
 
 \begin{figure}
 \centering
