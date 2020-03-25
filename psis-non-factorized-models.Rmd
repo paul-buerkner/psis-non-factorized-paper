@@ -8,15 +8,16 @@ date: |
 abstract: |
   Cross-validation can be used to measure a model's predictive accuracy for the
   purpose of model comparison, averaging, or selection. Standard leave-one-out
-  cross-validation (LOO-CV) requires the observation models can be factorized to simple terms, but many
-  important models in temporal and spatial statistics do not have this property
-  or are inefficient or unstable when being forced into a factorized form. A lot
-  of such non-factorized models fall into the category of multivariate normal
-  models, which can be generalized to multivariate Student-$t$ models which has
-  more flexible tails. We derive how to efficiently compute and validate both
-  exact and approximate LOO-CV for Bayesian non-factorized models with a
-  multivariate normal or Student-$t$ model. In a case study, we demonstrate
-  this method using lagged simultaneously autoregressive (SAR) models.
+  cross-validation (LOO-CV) requires that the observation model can be
+  factorized into simple terms, but many important models in temporal and spatial
+  statistics do not have this property or are inefficient or unstable when being
+  forced into a factorized form. A lot of such non-factorized models fall into
+  the category of multivariate normal models, which can be generalized to
+  multivariate Student-$t$ models which has more flexible tails. We derive how
+  to efficiently compute and validate both exact and approximate LOO-CV for
+  Bayesian non-factorized models with a multivariate normal or Student-$t$
+  model. In a case study, we demonstrate this method using lagged simultaneously
+  autoregressive (SAR) models.
   \linebreak\linebreak 
   non-factorized models, Bayesian inference, SAR models
   Keywords: cross-validation, Pareto-smoothed importance-sampling,
@@ -133,7 +134,7 @@ is sometimes more robust or efficient to marginalize out certain parameters,
 for instance observation-specific latent variables, and then work with
 a non-factorized model instead.
 
-In this paper we derive how to perform efficient approximate LOO-CV for
+In this paper, we derive how to perform efficient approximate LOO-CV for
 \emph{any} Bayesian multivariate normal or Student-$t$ model with an invertible
 covariance or scale matrix, regardless of whether or not the model
 factorizes. We also provide equations for computing exact LOO-CV for these
@@ -168,7 +169,7 @@ be avoided).
 
 If the observation model is formulated directly as the product of the
 pointwise pointwise observation models, we speak of a *factorized*
-model, and then the likelihood is also the product of the pointwise
+model. In this case, the likelihood is also the product of the pointwise
 likelihood contributions $p(y_i\,|\, y_{-i}, \theta)$.
 To better illustrate possible structures of the observation models, we
 formally divide $\theta$ into two parts, observation-specific latent
