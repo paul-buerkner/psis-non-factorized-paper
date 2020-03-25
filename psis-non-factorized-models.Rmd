@@ -1,5 +1,5 @@
 ---
-title: "Efficient leave-one-out cross-validation for Bayesian non-factorized normal and Student-t models"
+title: "Efficient leave-one-out cross-validation for Bayesian non-factorized normal and Student-$t$ models"
 author: "Paul-Christian Bürkner $^{1*}$, Jonah Gabry $^2$, & Aki Vehtari $^1$"
 date: |
   $^1$ Department of Computer Science, Aalto University, Finland\break
@@ -8,14 +8,14 @@ date: |
 abstract: |
   Cross-validation can be used to measure a model's predictive accuracy for the
   purpose of model comparison, averaging, or selection. Standard leave-one-out
-  cross-validation (LOO-CV) requires the likelihood to be factorized, but many
+  cross-validation (LOO-CV) requires the observation models can be factorized to simple terms, but many
   important models in temporal and spatial statistics do not have this property
   or are inefficient or unstable when being forced into a factorized form. A lot
   of such non-factorized models fall into the category of multivariate normal
-  models, which can be generalized to multivariate Student-t models which has
+  models, which can be generalized to multivariate Student-$t$ models which has
   more flexible tails. We derive how to efficiently compute and validate both
   exact and approximate LOO-CV for Bayesian non-factorized models with a
-  multivariate normal or Student-t likelihood. In a case study, we demonstrate
+  multivariate normal or Student-$t$ model. In a case study, we demonstrate
   this method using lagged simultaneously autoregressive (SAR) models.
   \linebreak\linebreak 
   non-factorized models, Bayesian inference, SAR models
@@ -113,37 +113,37 @@ measures such as the root mean squared error (RMSE) or mean absolute error [MAE;
 model as many times as there are observations in the data. Depending on the size
 of the data, complexity of the model, and estimation method, this can be
 practically infeasible as it simply requires too much computation time. For this
-reason, approximate versions of LOO-CV have been developed [@gelfand1992,
+reason, fast approximate versions of LOO-CV have been developed [@gelfand1992,
 @vehtari2017loo], most recently using Pareto-smoothed importance-sampling [PSIS;
 @vehtari2017loo; @vehtari2019psis].
 
-A standard assumption of any such LOO-CV approach using the ELPD is that the
-joint likelihood of the model over all observations has to be factorized. That
-is, expressions for observation-specific likelihood contributions need to be
-available. However, many important models do not have this property.
+A standard assumption of any such fast LOO-CV approach using the ELPD is that the
+the observation model over all observations has to have a factorized form. That
+is, the observation model for each observation is conditionally independent.
+However, many important models do not have this property.
 Particularly in temporal and spatial statistics it is common to fit models with
-multivariate normal or Student-t likelihoods that have structured covariance
-matrices such that the likelihood does not factorize. This is typically due to
+multivariate normal or Student-$t$ models that have structured covariance
+matrices such that the model does not factorize. This is typically due to
 the fact that observations depend on other observations from different time
 periods or different spatial units in addition to the dependence on the model
 parameters. Some of these models are actually non-factorizable, that is, we
-do not know of any reformulation that converts the likelihood into a factorized form.
+do not know of any reformulation that converts the observation model into a factorized form.
 Other non-factorized models could be factorized in theory but it 
 is sometimes more robust or efficient to marginalize out certain parameters,
 for instance observation-specific latent variables, and then work with
-a non-factorized likelihood instead.
+a non-factorized model instead.
 
 In this paper we derive how to perform efficient approximate LOO-CV for
-\emph{any} Bayesian multivariate normal or Student-t model with an invertible
-covariance or scale matrix, regardless of whether or not the likelihood
+\emph{any} Bayesian multivariate normal or Student-$t$ model with an invertible
+covariance or scale matrix, regardless of whether or not the model
 factorizes. We also provide equations for computing exact LOO-CV for these
 models, which can be used to validate the approximation and to handle
 problematic observations. Throughout, a Bayesian model specification
 and estimation via Markov chain Monte Carlo (MCMC) is assumed. We have
 implemented the developed methods in the R package brms [@brms1; @brms2]. 
 All materials including R source code are available in an online
-supplement.\footnote{Supplemental materials available at
-\url{https://github.com/paul-buerkner/psis-non-factorized-paper}.}
+supplement\footnote{Supplemental materials available at
+\url{https://github.com/paul-buerkner/psis-non-factorized-paper}.}.
 
 # Pointwise log-likelihood for non-factorized models {#pwnf}
 
@@ -166,16 +166,17 @@ the model while holding out the $i$th observation (in Section
 \ref{approx-loo-cv}, we will show how refitting the model to data $y_{-i}$ can
 be avoided).
 
-If the full model likelihood is formulated directly as the product of the
-pointwise likelihood contributions $p(y_i\,|\, y_{-i}, \theta)$, we speak of a
-*factorized* model. To better illustrate possible structures of the pointwise
-likelihoods $p(y_i\,|\, y_{-i}, \theta)$, we formally divide $\theta$ into two
-parts, observation-specific latent variables $f = (f_1, \ldots, f_N)$ and
-hyperparameters $\psi$, so that 
+If the observation model is formulated directly as the product of the
+pointwise pointwise observation models, we speak of a *factorized*
+model, and then the likelihood is also the product of the pointwise
+likelihood contributions $p(y_i\,|\, y_{-i}, \theta)$.
+To better illustrate possible structures of the observation models, we
+formally divide $\theta$ into two parts, observation-specific latent
+variables $f = (f_1, \ldots, f_N)$ and hyperparameters $\psi$, so that
 $p(y_i\,|\, y_{-i}, \theta) = p(y_i\,|\, y_{-i}, f_i, \psi)$. 
 Depending on the model, one of the two parts of $\theta$
-may also be empty. In very simple models, such as linear regression models, no
-latent variables exist and response values are conditionally independent given
+may also be empty. In very simple models, such as linear regression models, 
+latent variables are not explicitely presented and response values are conditionally independent given
 $\psi$, so that $p(y_i\,|\, y_{-i}, f_i, \psi) = p(y_i \,|\, \psi)$ (see Figure
 \ref{fig:dags} (a)). The full likelihood can then be written in the familiar
 form
@@ -190,11 +191,12 @@ pointwise log-likelihood can be obtained easily by computing
 $p(y_i\,|\, \psi)$ for each $i$ with computational cost $O(n)$.
 
 If directional paths between consecutive responses are added,
-responses are no longer conditionally independent but the likelihood still
-factorizes. This is common in time-series models. For example, in an
+responses are no longer conditionally independent, but the model
+factorizes to simple terms with Markovian dependency. This is common
+in time-series models. For example, in an
 autoregressive model of order 1 (see Figure \ref{fig:dags} (b)), the pointwise
-likelihoods are given by $p(y_i \,|\, y_{i-1}, \psi)$. In other cases, models
-have observation-specific latent variables $f_i$ and conditionally independent
+likelihoods are given by $p(y_i \,|\, y_{i-1}, \psi)$. In other time series, models
+may have observation-specific latent variables $f_i$ and conditionally independent
 responses so that the pointwise log-likelihoods simplify to 
 $p(y_i\,|\, y_{-i}, f_i, \psi) = p(y_i \,|\, f_i)$. 
 In models without directional paths between the
@@ -236,40 +238,41 @@ log-likelihood contributions remains in $O(n)$.
   \includegraphics{graphics/tikz_joint.pdf}
   %\captionof{figure}{Another figure}
 \end{minipage}
-\caption{Directional graphs illustrating common likelihood formulations
+\caption{Directional graphs illustrating common observation model dependency structures
 schematically. Black rectangles depict manifest variables, that is, observed
 response values. Black circles depict latent variables and parameters. Blue
 rectangles indicate a joint prior over the surrounded variables. (a)
 Conditionally independent responses given hyperparameters (e.g., a linear
-regression model). (b) Conditionally dependent responses with a Markov property
+regression model). (b) Conditionally dependent responses with a Markovian property
 (e.g., an autoregressive model of order 1). (c) Conditionally independent
 responses given observation-specific latent variables with a joint prior (e.g.,
 a latent Gaussian process model). (d)  Conditionally independent responses given
 observation-specific latent variables with a Markov property (e.g., a hidden
-Markov model). (e) Non-factorized model with a joint likelihood over all
+Markov model). (e) Non-factorized model with a joint observation model over all
 responses.}
 \label{fig:dags}
 \end{figure}
 
-Yet, there are several reasons why a *non-factorized* likelihood formulation
+Yet, there are several reasons why a *non-factorized* observation model
 (see Figure \ref{fig:dags} (e)) may be necessary or preferred. In non-factorized
 models, the joint likelihood of the response values $p(y \,|\, \theta)$ is not
 factorized into observation-specific components, but rather given directly as one
-single expression. For some models, an analytical factorized formulation is
+joint expression. For some models, an analytical factorized formulation is
 simply not available in which case we speak of a *non-factorizable* model. Even
-in models whose likelihood can be factorized in principle, it may still be
-preferable to use a non-factorized likelihood. This is true in particular for
+in models whose observation model can be factorized in principle, it may still be
+preferable to use a non-factorized model. This is true in particular for
 models with observation-specific latent variables (see Figure \ref{fig:dags} (c)
-and (d)) as a non-factorized formulation is often more efficient and numerically 
+and (d)) as a non-factorized formulation where the latent variables
+have been integrated out is often more efficient and numerically
 stable. For example, in latent GPs combined with a Gaussian
 observation model, one can marginalize over $f$ and formulate the GP directly on
-the manifest responses $y$ for increased efficiency [e.g., @rasmussen2003].
+the responses $y$ for increased efficiency [e.g., @rasmussen2003].
 Such marginalization has the additional advantage that both exact and
 approximate leave-one-out predictive estimation become more stable. This is
 because, in the factorized formulation, leaving out response $y_i$ also implies
 treating the corresponding latent variable $f_i$ as missing, which is now only
 identified through the joint prior over $f$. If this prior is weak, the
-posterior of $f_i$ will be quite flexible and, as a result, leave-one-out
+posterior of $f_i$ is highly influenced by one observation and then leave-one-out
 predictions of $y_i$ may be unstable both numerically and because of estimation
 error due to finite MCMC sampling or similar finite approximations.
 
@@ -291,7 +294,7 @@ However, the expression on the right-hand side of \eqref{pw-lh} may not always
 have an analytical solution. Accordingly computing $\log p(y_i \,|\, y_{-i},
 \theta)$ for non-factorized models is often impossible, or at least
 inefficient and numerically unstable. However, there is a large
-class of multivariate normal and Student-t models for which we will provide
+class of multivariate normal and Student-$t$ models for which we will provide
 efficient analytical solutions in this paper.
 
 ## Non-factorized normal models
@@ -322,7 +325,7 @@ and variance
 <!-- -->
 \begin{equation}
 \label{csd}
-  \tilde{\sigma}_{i} = \sigma_{ii} + \sigma_{i,-i} \Sigma^{-1}_{-i} \sigma_{-i,i}
+  \tilde{\sigma}_{i} = \sigma_{ii} + \sigma_{i,-i} \Sigma^{-1}_{-i} \sigma_{-i,i} .
 \end{equation}
 <!-- -->
 In the equations above, $\mu_{-i}$ is the mean vector without the $i$th element,
@@ -419,29 +422,29 @@ Equation (34).}:
 \end{equation}
 -->
 
-## Non-factorized Student-t models
+## Non-factorized Student-$t$ models
 
 Several generalizations of the multivariate normal distribution have been
-suggested, perhaps most notably the multivariate Student-t distribution 
+suggested, perhaps most notably the multivariate Student-$t$ distribution 
 [@zellner1976], which has an additional positive *degrees of freedom* parameter
 $\nu$ that controls the tails of the distribution. If $\nu$ is small, the tails
 are much fatter than those of the normal distribution. If $\nu$ is large, the
-multivariate Student-t distribution becomes more similar to the corresponding
+multivariate Student-$t$ distribution becomes more similar to the corresponding
 multivariate normal distribution and is equal to the latter for $\nu \rightarrow
 \infty$. As $\nu$ can be estimated alongside the other model parameters in
-Student-t models, the fatness of the tails is flexibly adjusted based on
+Student-$t$ models, the thickness of the tails is flexibly adjusted based on
 information from the observed response values and the prior. The (multivariate)
-Student-t distribution has been studied in various places [e.g., @zellner1976;
-@ohagan1979;@fernandez1999; @zhang2010; @piche2012; @shah2014]. For example, Student-t
-processes which are based on the multivariate Student-t distribution constitute
+Student-$t$ distribution has been studied in various places [e.g., @zellner1976;
+@ohagan1979;@fernandez1999; @zhang2010; @piche2012; @shah2014]. For example, Student-$t$
+processes which are based on the multivariate Student-$t$ distribution constitute
 a generalization of Gaussian processes while retaining most of the latter's
 favorable properties [@shah2014][^tprocess].
 
-[^tprocess]: A Student-t process is not to be confused with a factorized
-univariate Student-t likelihood in combination with a Gaussian process on the
+[^tprocess]: A Student-$t$ process is not to be confused with a factorized
+univariate Student-$t$ likelihood in combination with a Gaussian process on the
 corresponding latent variables as these models have different properties.
 
-The density of the $N$ dimensional multivariate Student-t distribution 
+The density of the $N$ dimensional multivariate Student-$t$ distribution 
 of vector $y$ is given by
 <!-- -->
 \begin{equation}
@@ -458,9 +461,9 @@ conditional distribution of the $i$th observation given all other observations
 and the model parameters, $p(y_i | y_{-i}, \theta)$, can be computed analytically.
 \begin{proposition}
 \label{prop-cond-student}
-If $y$ is multivariate Student-t with degrees of freedom $\nu$, location vector
+If $y$ is multivariate Student-$t$ with degrees of freedom $\nu$, location vector
 $\mu$, and scale matrix $\Sigma$, then the conditional distribution of $y_i$
-given $y_{-i}$ for any observation $i$ is univariate Student-t with parameters
+given $y_{-i}$ for any observation $i$ is univariate Student-$t$ with parameters
 \begin{equation}
 \label{cnu}
 \tilde{\nu}_i = \nu + N - 1,
@@ -486,7 +489,7 @@ Here $\tilde{\mu}_{i}$ is the same as in the normal case and $\tilde{\sigma}_{i}
 is the same up to the correction factor $\frac{\nu + \beta_{-i}}{\nu + N - 1}$,
 which approaches $1$ for $\nu \rightarrow \infty$ as one would expect.
 Based on the above equations, we can compute the pointwise log-likelihood 
-values in the Student-t case as
+values in the Student-$t$ case as
 <!-- -->
 \begin{align}
 \label{lp-student}
@@ -501,7 +504,7 @@ the non-optimized normal case and is therefore quite inefficient.
 Fortunately, the efficiency can again be improved.
 \begin{proposition}
 \label{prop-eff-student}
-If $y$ is multivariate Student-t with degrees of freedom $\nu$, location vector
+If $y$ is multivariate Student-$t$ with degrees of freedom $\nu$, location vector
 $\mu$, and scale matrix $\Sigma$, then the conditional location and scale of $y_i$
 given $y_{-i}$ for any observation $i$ can be computed as
 \begin{equation}
@@ -537,7 +540,7 @@ $O(S N^{k+1}) > O(SN^3)$ operations.
 
 ## Example: Lagged SAR models
 
-It often requires additional work to take a given multivariate normal or Student-t
+It often requires additional work to take a given multivariate normal or Student-$t$
 model and express it in the form required to apply the equations for the
 predictive mean and standard deviation. Consider, for example, the lagged
 simultaneous autoregressive (SAR) model [@cressie1992; @haining2003], a spatial
@@ -574,13 +577,13 @@ the requirements of Proposition \ref{prop-eff-normal}. To make the lagged SAR mo
 $\rho$, $\eta$, and $\sigma^2$):
 <!-- -->
 \begin{equation}
-y \sim \mathrm{N}\left((I - \rho W)^{-1} \eta, \sigma^2 (I - \rho W)^{-1} (I - \rho W)^{-{\rm T}} \right),
+y \sim \mathrm{N}\left((I - \rho W)^{-1} \eta,\, \sigma^2 (I - \rho W)^{-1} (I - \rho W)^{-{\rm T}} \right),
 \end{equation}
 <!-- -->
 or more compactly, with $\widetilde{W} = (I - \rho W)$, 
 <!-- -->
 \begin{equation}
-y \sim \mathrm{N}\left(\widetilde{W}^{-1} \eta, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right).
+y \sim \mathrm{N}\left(\widetilde{W}^{-1} \eta,\, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right).
 \end{equation}
 <!-- -->
 Written in this way, the lagged SAR model has the required form \eqref{mvnormal}.
@@ -598,10 +601,10 @@ $\rho$ in a non-trivial manner, $\widetilde{W}^{-1}$ needs to be computed for
 each posterior draw, which implies an overall computational cost of less than
 $O(S N^3)$. 
 
-If the residuals are Student-t distributed, we can apply analogous transformations as above to arrive at the Student-t distribution for the responses
+If the residuals are Student-$t$ distributed, we can apply analogous transformations as above to arrive at the Student-$t$ distribution for the responses
 <!-- -->
 \begin{equation}
-y \sim \mathrm{t}\left(\nu, \widetilde{W}^{-1} \eta, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right),
+y \sim \mathrm{t}\left(\nu,\, \widetilde{W}^{-1} \eta,\, \sigma^2  (\widetilde{W}^{\rm T} \widetilde{W})^{-1} \right),
 \end{equation}
 with computational cost dominated by the computation of the $\beta_i$
 from Equation \eqref{cbeta2} which is in $O(S N^3)$.
@@ -621,7 +624,7 @@ The conditional pointwise log-likelihood matrix of dimension $S \times N$ is the
 only required input to the approximate LOO-CV algorithm from @vehtari2017loo and
 thus the equations provided in Section \ref{pwnf} allow for approximate LOO-CV
 for \emph{any} model that can be expressed conditionally in terms of a
-multivariate or Student-t model with invertible covariance/scale matrix
+multivariate or Student-$t$ model with invertible covariance/scale matrix
 $\Sigma$; including those where the likelihood does not factorize.
 
 Suppose we have obtained $S$ posterior draws $\theta^{(s)}$ $(s=1,\ldots,S)$, from the
@@ -676,11 +679,11 @@ LOO-CV for a non-factorized model. Here we will provide the necessary
 equations and in the supplementary materials we provide code for comparing the
 exact and approximate versions.
 
-In the case of those multivariate normal or Student-t models that have the marginalization property, exact
+In the case of those multivariate normal or Student-$t$ models that have the marginalization property, exact
 LOO-CV is relatively straightforward: when refitting the model we can simply 
 drop the one row and column of the covariance matrix $\Sigma$ corresponding to the 
 held out observation without altering the prior of the other observations. 
-But this does not hold in general for all multivariate normal or Student-t models
+But this does not hold in general for all multivariate normal or Student-$t$ models
 (in particular it does not hold for SAR models). 
 Instead, in order to keep the original prior, we may need to maintain the full
 covariance matrix $\Sigma$ even when one of the observations is left out.
@@ -1020,7 +1023,7 @@ almost equal for the complete data set as well.
 Although we were able to correct for the problematic observation in the
 approximate LOO-CV estimation, the mere existence of such problematic
 observations raises doubts about the appropriateness of the normal SAR model for
-the present data. Accordingly, it is sensible to fit a Student-t SAR model as a
+the present data. Accordingly, it is sensible to fit a Student-$t$ SAR model as a
 potentially better predicting alternative due to its fatter tails. We choose an
 informative ${\rm Gamma}(4, 0.5)$ prior (with mean $8$ and standard deviation
 $4$) on the degrees of freedom parameter $\nu$ to ensure rather fat tails of the
@@ -1057,7 +1060,7 @@ fit_sar_student <- brm(
 )
 ```
 
-```{r plot-lagsar-student, fig.cap="Posterior distribution of selected parameters of the Student-t lagged SAR model along with posterior median and 50% central interval.", fig.width=10, fig.asp=0.4}
+```{r plot-lagsar-student, fig.cap="Posterior distribution of selected parameters of the Student-$t$ lagged SAR model along with posterior median and 50% central interval.", fig.width=10, fig.asp=0.4}
 ps_student <- as.data.frame(fit_sar_student) %>%
   select(b_Intercept, b_INC, b_HOVAL, lagsar, sigma, nu) %>%
   rename(
@@ -1215,7 +1218,7 @@ exact_elpds_student <- apply(ll_student, 2, log_mean_exp)
 exact_elpd_student <- sum(exact_elpds_student)
 ```
 
-```{r elpd-compare-student, fig.cap = "Comparison of approximate and exact pointwise elpd values for the Student-t SAR model. There were no problematic observations for this model.", fig.height=2.5, fig.width=5}
+```{r elpd-compare-student, fig.cap = "Comparison of approximate and exact pointwise elpd values for the Student-$t$ SAR model. There were no problematic observations for this model.", fig.height=2.5, fig.width=5}
 df_student <- data.frame(
   approx_elpd = loo_sar_student$pointwise[, "elpd_loo"],
   exact_elpd = exact_elpds_student
@@ -1228,7 +1231,7 @@ plot_elpd_student <- ggplot(df_student, aes(x = approx_elpd, y = exact_elpd)) +
   ggtitle("d")
 ```
 
-```{r plots-student, message = FALSE, fig.height=7.8, cache=FALSE, fig.cap="Results of the Student-t SAR model. a) Posterior distribution of selected parameters of the lagged SAR model along with posterior median and 50% central interval. b) PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation. c) Implied response values of the first four observations computed (1) after model fitting (type = 'loo') and (2) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp'). d) Comparison of approximate and exact pointwise elpd values. There were no problematic observations for this model."}
+```{r plots-student, message = FALSE, fig.height=7.8, cache=FALSE, fig.cap="Results of the Student-$t$ SAR model. a) Posterior distribution of selected parameters of the lagged SAR model along with posterior median and 50% central interval. b) PSIS diagnostic plot showing the Pareto-$k$-estimate of each observation. c) Implied response values of the first four observations computed (1) after model fitting (type = 'loo') and (2) as part of the model in the form of posterior-predictive draws for the missing observation (type = 'pp'). d) Comparison of approximate and exact pointwise elpd values. There were no problematic observations for this model."}
 grid.arrange(
   plot_ps_student, 
   plot_ks_student,
@@ -1249,23 +1252,23 @@ data demonstrates that they are very similar (up to random error due to the MCMC
 estimation). The results shown in Figure \@ref(fig:plots-student) (c) and (d)
 have the same interpretation as the analogous plots for the normal case and
 provide further evidence for both the correctness of our (exact and
-approximate) LOO-CV methods for non-factorized Student-t models and for the
-quality of the PSIS-LOO-CV approximation for the present Student-t SAR model.
+approximate) LOO-CV methods for non-factorized Student-$t$ models and for the
+quality of the PSIS-LOO-CV approximation for the present Student-$t$ SAR model.
 
 ```{r}
 looc <- loo_compare(loo_sar_normal_refit, loo_sar_student)
 ```
 
 Lastly, let us compare the PSIS-LOO-CV estimate of the normal SAR model (after
-correcting for the problematic observation via refit) to the Student-t SAR
+correcting for the problematic observation via refit) to the Student-$t$ SAR
 model. The ELPD difference between the two models is `r looc[2, "elpd_diff"]`
-(SE = `r looc[2, "se_diff"]`) in favor of the Student-t model, and thus very
+(SE = `r looc[2, "se_diff"]`) in favor of the Student-$t$ model, and thus very
 small and not substantial for any practical purposes. As shown in Figure
 \@ref(fig:elpd-approx-compare), the pointwise elpd contributions are also highly
-similar. The Student-t model fits slightly but noticeably better only for the 4th
+similar. The Student-$t$ model fits slightly but noticeably better only for the 4th
 observation.
 
-```{r elpd-approx-compare, fig.cap = "Comparison of approximate pointwise elpd values for the normal SAR model (after refit for the 4th observation) and the Student-t SAR model (without refit). Observations with relevant differences are highlighted in red.", fig.height=2.5}
+```{r elpd-approx-compare, fig.cap = "Comparison of approximate pointwise elpd values for the normal SAR model (after refit for the 4th observation) and the Student-$t$ SAR model (without refit). Observations with relevant differences are highlighted in red.", fig.height=2.5}
 df_compare <- data.frame(
   approx_elpd_normal = loo_sar_normal_refit$pointwise[, "elpd_loo"],
   approx_elpd_student = loo_sar_student$pointwise[, "elpd_loo"]
@@ -1276,7 +1279,7 @@ ggplot(df_compare, aes(x = approx_elpd_normal, y = approx_elpd_student)) +
   geom_point(size = 2) +
   geom_point(data = df_compare[4, ], size = 3, color = "red3") +
   xlab("Approximate normal elpds") +
-  ylab("Approximate Student-t elpds") +
+  ylab("Approximate Student-$t$ elpds") +
   xlim(c(-16, -3)) +
   ylim(c(-16, -3)) 
 ```
@@ -1286,7 +1289,7 @@ ggplot(df_compare, aes(x = approx_elpd_normal, y = approx_elpd_student)) +
 
 In this paper, we derived how to perform and validate exact and approximate
 leave-one-out cross-validation (LOO-CV) for non-factorized multivariate normal
-and Student-t models that are highly relevant to temporal and spatial
+and Student-$t$ models that are highly relevant to temporal and spatial
 statistics. The LOO-CV approximations make model fit evaluation and comparison
 feasible, efficient, and robust for widespread application. Importantly, this
 not only applies to non-factorizable models for which a factorized likelihood is
@@ -1297,13 +1300,13 @@ such as Markov-Chain Monte Carlo. In such cases, marginalizing over
 observation-specific latent variables and using a non-factorized likelihood
 formulation can lead to more robust estimates. The practical applicability of
 the developed methods was demonstrated in a case study using normal and
-Student-t spatial autoregressive models.
+Student-$t$ spatial autoregressive models.
 
 <!--
 The primary
 motivation for this paper is to enable approximate LOO-CV for models that cannot
 be factorized at all, but our approach also works for *any* Bayesian model that
-can be expressed in terms of a multivariate normal or Student-t likelihood.
+can be expressed in terms of a multivariate normal or Student-$t$ likelihood.
 Therefore it may also be useful for models that are factorizable but for which
 the factorized representation is difficult to compute or not available to the
 researcher for some other reason.
@@ -1347,12 +1350,12 @@ mean $(y_i - \mu_i) - \frac{g_i}{\bar{\sigma}_{ii}}$, then $y$ has LOO mean $y_i
 *Proof* of Proposition \ref{prop-cond-student}. 
 Using the parameterization $K := {\rm Cov}(y) = \frac{\nu}{\nu - 2} \Sigma$ and
 requiring $\nu > 2$, @shah2014 proof in their Lemma 3 that, if $y = (y_1, y_2)$
-is multivariate Student-t of dimension $N = N_1 + N_2$, then $y_2$ given $y_1$
-is multivariate Student-t of dimension $N_2$. Moreover, they provide equations
-for the parameters of the conditional Student-t distribution. When we
+is multivariate Student-$t$ of dimension $N = N_1 + N_2$, then $y_2$ given $y_1$
+is multivariate Student-$t$ of dimension $N_2$. Moreover, they provide equations
+for the parameters of the conditional Student-$t$ distribution. When we
 parameterize for $\Sigma$ instead of $K$ and allow for $\nu > 0$, we can repeat
 their proof analogously which yields the following parameters of the conditional
-Student-t distribution of $y_2$ given $y_1$:
+Student-$t$ distribution of $y_2$ given $y_1$:
 \begin{equation}
 \tilde{\nu}_2 = \nu + N_1,
 \end{equation}
