@@ -115,7 +115,7 @@ of the data, complexity of the model, and estimation method, this can be
 practically infeasible as it simply requires too much computation time. For this
 reason, approximate versions of LOO-CV have been developed [@gelfand1992,
 @vehtari2017loo], most recently using Pareto-smoothed importance-sampling [PSIS;
-@vehtari2017loo; @vehtari2017psis].
+@vehtari2017loo; @vehtari2019psis].
 
 A standard assumption of any such LOO-CV approach using the ELPD is that the
 joint likelihood of the model over all observations has to be factorized. That
@@ -642,7 +642,7 @@ in two steps. First, we obtain the raw importance ratios
 \end{equation}
 <!-- -->
 and then stabilize them using Pareto-smoothed importance-sampling to
-obtain the weights $w_i^{(s)}$ [@vehtari2017loo; @vehtari2017psis]. The
+obtain the weights $w_i^{(s)}$ [@vehtari2017loo; @vehtari2019psis]. The
 resulting approximation is referred to as PSIS-LOO-CV [@vehtari2017loo].
 
 For Bayesian models fit using MCMC, the whole procedure of evaluating
@@ -670,7 +670,7 @@ crime data.
 
 In order to validate the approximate LOO-CV procedure, and also in order to
 allow exact computations to be made for a small number of leave-one-out folds
-for which the Pareto-$k$ diagnostic [@vehtari2017psis] indicates an
+for which the Pareto-$k$ diagnostic [@vehtari2019psis] indicates an
 unstable approximation, we need to consider how we might do \emph{exact}
 LOO-CV for a non-factorized model. Here we will provide the necessary
 equations and in the supplementary materials we provide code for comparing the
@@ -813,7 +813,7 @@ In order to evaluate model fit, the next step is to compute the pointwise
 log-likelihood values needed for approximate LOO-CV and we apply the
 method laid out in Section \ref{approx-loo-cv}. Since this is already implemented in
 brms[^source], we can simply use the built-in `loo` method on the fitted model to obtain the desired results.
-The quality of the approximation can be investigated graphically by plotting the Pareto-$k$ diagnostic for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2017psis]. In Figure \@ref(fig:plots-normal) (b), we see that the fourth observation is problematic.
+The quality of the approximation can be investigated graphically by plotting the Pareto-$k$ diagnostic for each observation. Ideally, they should not exceed $0.5$, but in practice the algorithm turns out to be robust up to values of $0.7$ [@vehtari2017loo;@vehtari2019psis]. In Figure \@ref(fig:plots-normal) (b), we see that the fourth observation is problematic.
 This has two implications. First, it may reduce the accuracy of the LOO-CV approximation.
 Second, it indicates that the fourth observation is highly influential for the 
 posterior and thus questions the robustness of the inference obtained by means
