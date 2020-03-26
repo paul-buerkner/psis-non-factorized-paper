@@ -9,15 +9,13 @@ abstract: |
   Cross-validation can be used to measure a model's predictive accuracy for the
   purpose of model comparison, averaging, or selection. Standard leave-one-out
   cross-validation (LOO-CV) requires that the observation model can be
-  factorized into simple terms, but many important models in temporal and spatial
-  statistics do not have this property or are inefficient or unstable when being
-  forced into a factorized form. A lot of such non-factorized models fall into
-  the category of multivariate normal models, which can be generalized to
-  multivariate Student-$t$ models which has more flexible tails. We derive how
-  to efficiently compute and validate both exact and approximate LOO-CV for
-  Bayesian non-factorized models with a multivariate normal or Student-$t$
-  model. In a case study, we demonstrate this method using lagged simultaneously
-  autoregressive (SAR) models.
+  factorized into simple terms, but a lot of important models in temporal and
+  spatial statistics do not have this property or are inefficient or unstable
+  when forced into a factorized form. We derive how to efficiently compute and
+  validate both exact and approximate LOO-CV for any Bayesian non-factorized
+  model with a multivariate normal or Student-$t$ outcome model. We demonstrate
+  the method using lagged simultaneously autoregressive (SAR) models as a case
+  study.
   \linebreak\linebreak 
   non-factorized models, Bayesian inference, SAR models
   Keywords: cross-validation, Pareto-smoothed importance-sampling,
@@ -123,7 +121,7 @@ the model over all observations has to have a factorized form. That
 is, the overall observation model should be represented as the product of the
 pointwise models/likelihoods for each observation. However, many important
 models do not have this factorization property. Particularly in temporal and
-spatial statistics it is common to fit models with multivariate normal or
+spatial statistics it is common to fit multivariate normal or
 Student-$t$ models that have structured covariance matrices such that the model
 does not factorize. This is typically due to the fact that observations depend
 on other observations from different time periods or different spatial units in
@@ -174,7 +172,7 @@ the model while holding out the $i$th observation (in Section
 be avoided).
 
 If the observation model is formulated directly as the product of the
-pointwise observation models, we speak of a *factorized*
+pointwise observation models, we call it a *factorized*
 model. In this case, the likelihood is also the product of the pointwise
 likelihood contributions $p(y_i\,|\, y_{-i}, \theta)$.
 To better illustrate possible structures of the observation models, we
@@ -269,39 +267,38 @@ factorized into observation-specific components, but rather given directly as on
 joint expression. For some models, an analytical factorized formulation is
 simply not available in which case we speak of a *non-factorizable* model. Even
 in models whose observation model can be factorized in principle, it may still be
-preferable to use a non-factorized model. This is true in particular for
+preferable to use a non-factorized form. This is true in particular for
 models with observation-specific latent variables (see Figure \ref{fig:dags} (c)
-and (d)) as a non-factorized formulation where the latent variables
+and (d)), as a non-factorized formulation where the latent variables
 have been integrated out is often more efficient and numerically
-stable. For example, in latent GPs combined with a Gaussian
-observation model, one can marginalize over $f$ and formulate the GP directly on
-the responses $y$ for increased efficiency [e.g., @rasmussen2003].
+stable. For example, a latent GP combined with a Gaussian
+observation model can be fit more efficiently by marginalizing over $f$ and 
+formulating the GP directly on the responses $y$ [e.g., @rasmussen2003].
 Such marginalization has the additional advantage that both exact and
 approximate leave-one-out predictive estimation become more stable. This is
 because, in the factorized formulation, leaving out response $y_i$ also implies
-treating the corresponding latent variable $f_i$ as missing, which is now only
+treating the corresponding latent variable $f_i$ as missing, which is then only
 identified through the joint prior over $f$. If this prior is weak, the
-posterior of $f_i$ is highly influenced by one observation and then leave-one-out
+posterior of $f_i$ is highly influenced by one observation and the leave-one-out
 predictions of $y_i$ may be unstable both numerically and because of estimation
 error due to finite MCMC sampling or similar finite approximations.
 
-Whichever of these reasons lead to the use of a non-factorized model, it comes
-at the cost of having no direct access to the leave-one-out 
-predictive densities \eqref{loo-pd} and thus to the overall
-leave-one-out predictive accuracy. In theory, we 
-can express the observation-specific likelihoods in terms of the joint
-likelihood via
+Whether a non-factorized model is used by necessity or for efficiency and
+stability, it comes at the cost of having no direct access to the leave-one-out
+predictive densities \eqref{loo-pd} and thus to the overall leave-one-out
+predictive accuracy. In theory, we can express the observation-specific
+likelihoods in terms of the joint likelihood via
 <!-- -->
 \begin{equation}
 \label{pw-lh}
 p(y_i \,|\, y_{i-1}, \theta) = 
   \frac{p(y \,|\, \theta)}{p(y_{-i} \,|\, \theta)} = 
-  \frac{p(y \,|\, \theta)}{\int p(y \,|\, \theta) \, d y_i}.
+  \frac{p(y \,|\, \theta)}{\int p(y \,|\, \theta) \, d y_i},
 \end{equation}
 <!-- -->
-However, the expression on the right-hand side of \eqref{pw-lh} may not always
-have an analytical solution. Accordingly computing $\log p(y_i \,|\, y_{-i},
-\theta)$ for non-factorized models is often impossible, or at least
+but the expression on the right-hand side of \eqref{pw-lh} may not always
+have an analytical solution. Computing $\log p(y_i \,|\, y_{-i},
+\theta)$ for non-factorized models is therefore often impossible, or at least
 inefficient and numerically unstable. However, there is a large
 class of multivariate normal and Student-$t$ models for which we will provide
 efficient analytical solutions in this paper.
@@ -1296,20 +1293,19 @@ ggplot(df_compare, aes(x = approx_elpd_normal, y = approx_elpd_student)) +
 
 # Conclusion
 
-In this paper, we derived how to perform and validate exact and approximate
+In this paper we derived how to perform and validate exact and approximate
 leave-one-out cross-validation (LOO-CV) for non-factorized multivariate normal
-and Student-$t$ models that are highly relevant to temporal and spatial
-statistics. The LOO-CV approximations make model fit evaluation and comparison
-feasible, efficient, and robust for widespread application. Importantly, this
-not only applies to non-factorizable models for which a factorized likelihood is
-unavailable. Rather, it is also relevant to models for which a factorized
-likelihood is available in principle but whose LOO predictive density may be
-unstable because of numerical reasons or because of finite estimation procedures
-such as Markov-Chain Monte Carlo. In such cases, marginalizing over
-observation-specific latent variables and using a non-factorized likelihood
-formulation can lead to more robust estimates. The practical applicability of
-the developed methods was demonstrated in a case study using normal and
-Student-$t$ spatial autoregressive models.
+and Student-$t$ models and we demonstrated the practical applicability of our
+method in a case study using spatial autoregressive models. The proposed LOO-CV
+approximation makes efficient and robust model fit evaluation and comparison
+feasible for many models that are widely used in temporal and spatial
+statistics. Importantly, our method does not only apply to non-factorizable
+models for which a factorized likelihood is unavailable. It is also useful when
+factorization is possible in principle but could result in a unstable LOO
+predictive density, either for numerical reasons or due to the use of finite
+estimation procedures like Markov-Chain Monte Carlo. In such cases,
+marginalizing over observation-specific latent variables and using a
+non-factorized formulation can lead to more robust estimates.
 
 <!--
 The primary
