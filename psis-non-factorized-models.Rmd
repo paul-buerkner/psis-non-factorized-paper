@@ -118,22 +118,28 @@ reason, fast approximate versions of LOO-CV have been developed [@gelfand1992,
 @vehtari2017loo], most recently using Pareto-smoothed importance-sampling [PSIS;
 @vehtari2017loo; @vehtari2019psis].
 
-A standard assumption of any such fast LOO-CV approach using the ELPD is that the
+A standard assumption of any such fast LOO-CV approach using the ELPD is that
 the observation model over all observations has to have a factorized form. That
-is, the observation model for each observation is conditionally independent.
-However, many important models do not have this property.
-Particularly in temporal and spatial statistics it is common to fit models with
-multivariate normal or Student-$t$ models that have structured covariance
-matrices such that the model does not factorize. This is typically due to
-the fact that observations depend on other observations from different time
-periods or different spatial units in addition to the dependence on the model
-parameters. Some of these models are actually non-factorizable, that is, we
-do not know of any reformulation that converts the observation model into a factorized form.
-Other non-factorized models could be factorized in theory but it 
-is sometimes more robust or efficient to marginalize out certain parameters,
-for instance observation-specific latent variables, and then work with
-a non-factorized model instead.
+is, the overall observation model should be represented as the product of the
+pointwise models/likelihoods for each observation. However, many important
+models do not have this factorization property. Particularly in temporal and
+spatial statistics it is common to fit models with multivariate normal or
+Student-$t$ models that have structured covariance matrices such that the model
+does not factorize. This is typically due to the fact that observations depend
+on other observations from different time periods or different spatial units in
+addition to the dependence on the model parameters. Some of these models are
+actually non-factorizable, that is, we do not know of any reformulation that
+converts the observation model into a factorized form. Other non-factorized
+models could be factorized in theory but it is sometimes more robust or
+efficient to marginalize out certain parameters, for instance
+observation-specific latent variables, and then work with a non-factorized model
+instead.
 
+Conceptually, a factorized model is not required for cross-validation in
+general or LOO-CV in particular to make sense. This also implies that neither
+conditional independence nor conditional exchangability are necessary
+assumptions. However, when using non-factorized observation models 
+in LOO-CV, computational challenges arise.
 In this paper, we derive how to perform efficient approximate LOO-CV for
 \emph{any} Bayesian multivariate normal or Student-$t$ model with an invertible
 covariance or scale matrix, regardless of whether or not the model
@@ -168,7 +174,7 @@ the model while holding out the $i$th observation (in Section
 be avoided).
 
 If the observation model is formulated directly as the product of the
-pointwise pointwise observation models, we speak of a *factorized*
+pointwise observation models, we speak of a *factorized*
 model. In this case, the likelihood is also the product of the pointwise
 likelihood contributions $p(y_i\,|\, y_{-i}, \theta)$.
 To better illustrate possible structures of the observation models, we
