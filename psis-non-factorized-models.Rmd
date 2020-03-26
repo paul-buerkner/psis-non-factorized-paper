@@ -119,7 +119,7 @@ reason, fast approximate versions of LOO-CV have been developed [@gelfand1992,
 @vehtari2017loo; @vehtari2019psis].
 
 A standard assumption of any such fast LOO-CV approach using the ELPD is that
-the observation model over all observations has to have a factorized form. That
+the model over all observations has to have a factorized form. That
 is, the overall observation model should be represented as the product of the
 pointwise models/likelihoods for each observation. However, many important
 models do not have this factorization property. Particularly in temporal and
