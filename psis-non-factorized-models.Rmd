@@ -13,12 +13,12 @@ abstract: |
   spatial statistics do not have this property or are inefficient or unstable
   when forced into a factorized form. We derive how to efficiently compute and
   validate both exact and approximate LOO-CV for any Bayesian non-factorized
-  model with a multivariate normal or Student-$t$ outcome model. We demonstrate
-  the method using lagged simultaneously autoregressive (SAR) models as a case
-  study.
+  model with a multivariate normal or Student-$t$ distribution on the outcome
+  values. We demonstrate the method using lagged simultaneously autoregressive
+  (SAR) models as a case study.
   \linebreak\linebreak 
-  non-factorized models, Bayesian inference, SAR models
   Keywords: cross-validation, Pareto-smoothed importance-sampling,
+  non-factorized models, Bayesian inference, SAR models
 lang: en-US
 class: man
 figsintext: true
